@@ -18,11 +18,9 @@ export function Navbar() {
       <div className="container mx-auto px-4 h-16 flex items-center justify-between">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-primary rounded-xl flex items-center justify-center text-primary-foreground font-bold text-xl">
-              FT
-            </div>
+            <img src="/logo.jpeg" alt="عربتي" className="w-12 h-12 rounded-xl object-cover" />
             <span className="font-black text-xl tracking-tight text-foreground">
-              سوق عربات الفود ترك
+              عربتي
             </span>
           </Link>
           

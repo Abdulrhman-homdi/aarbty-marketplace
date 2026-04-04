@@ -25,7 +25,7 @@ export default function Home() {
         <div className="container relative z-10 mx-auto px-4 pt-20">
           <div className="max-w-3xl">
             <h1 className="text-5xl md:text-7xl font-black text-white mb-6 leading-tight animate-in fade-in slide-in-from-bottom-8 duration-700">
-              <span className="text-primary block mb-2">سوق الفود ترك</span>
+              <span className="text-primary block mb-2">عربتي</span>
               المكان الأول لبيع وتأجير العربات في المملكة
             </h1>
             <p className="text-xl text-gray-300 mb-8 max-w-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-150">
