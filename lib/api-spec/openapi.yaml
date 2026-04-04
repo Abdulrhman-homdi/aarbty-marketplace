@@ -3,20 +3,29 @@ info:
   # Do not change the title, if the title changes, the import paths will be broken
   title: Api
   version: 0.1.0
-  description: API specification
+  description: Food Truck Marketplace API
 servers:
   - url: /api
     description: Base API path
 tags:
   - name: health
     description: Health operations
+  - name: food-trucks
+    description: Food truck listings
+  - name: inquiries
+    description: Availability inquiries
+  - name: contracts
+    description: Sale and rental contracts
+  - name: wallet
+    description: Wallet and payments
+  - name: stats
+    description: Platform statistics
 paths:
   /healthz:
     get:
       operationId: healthCheck
       tags: [health]
       summary: Health check
-      description: Returns server health status
       responses:
         "200":
           description: Healthy
@@ -24,6 +33,360 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/HealthStatus"
+
+  /food-trucks:
+    get:
+      operationId: listFoodTrucks
+      tags: [food-trucks]
+      summary: List all food trucks with optional filters
+      parameters:
+        - name: activityType
+          in: query
+          schema:
+            type: string
+            enum: [food, beverages]
+        - name: capacity
+          in: query
+          schema:
+            type: string
+            enum: [one, two, more]
+        - name: withEquipment
+          in: query
+          schema:
+            type: boolean
+        - name: location
+          in: query
+          schema:
+            type: string
+        - name: licensed
+          in: query
+          schema:
+            type: boolean
+        - name: listingType
+          in: query
+          schema:
+            type: string
+            enum: [sale, rent]
+        - name: minPrice
+          in: query
+          schema:
+            type: number
+        - name: maxPrice
+          in: query
+          schema:
+            type: number
+      responses:
+        "200":
+          description: List of food trucks
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/FoodTruck"
+    post:
+      operationId: createFoodTruck
+      tags: [food-trucks]
+      summary: Create a new food truck listing
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodTruckBody"
+      responses:
+        "201":
+          description: Food truck created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruck"
+
+  /food-trucks/{id}:
+    get:
+      operationId: getFoodTruck
+      tags: [food-trucks]
+      summary: Get a single food truck by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Food truck details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruck"
+        "404":
+          description: Not found
+    put:
+      operationId: updateFoodTruck
+      tags: [food-trucks]
+      summary: Update a food truck listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateFoodTruckBody"
+      responses:
+        "200":
+          description: Updated food truck
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruck"
+    delete:
+      operationId: deleteFoodTruck
+      tags: [food-trucks]
+      summary: Delete a food truck listing
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "204":
+          description: Deleted
+
+  /food-trucks/{id}/availability:
+    patch:
+      operationId: updateFoodTruckAvailability
+      tags: [food-trucks]
+      summary: Toggle truck availability status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAvailabilityBody"
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/FoodTruck"
+
+  /inquiries:
+    get:
+      operationId: listInquiries
+      tags: [inquiries]
+      summary: List all inquiries
+      parameters:
+        - name: truckId
+          in: query
+          schema:
+            type: integer
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [pending, confirmed, rejected]
+      responses:
+        "200":
+          description: List of inquiries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Inquiry"
+    post:
+      operationId: createInquiry
+      tags: [inquiries]
+      summary: Submit an availability inquiry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateInquiryBody"
+      responses:
+        "201":
+          description: Inquiry created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inquiry"
+
+  /inquiries/{id}/respond:
+    patch:
+      operationId: respondToInquiry
+      tags: [inquiries]
+      summary: Owner responds to availability inquiry
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RespondToInquiryBody"
+      responses:
+        "200":
+          description: Response recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Inquiry"
+
+  /contracts:
+    get:
+      operationId: listContracts
+      tags: [contracts]
+      summary: List contracts
+      parameters:
+        - name: type
+          in: query
+          schema:
+            type: string
+            enum: [sale, rent]
+      responses:
+        "200":
+          description: List of contracts
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Contract"
+    post:
+      operationId: createContract
+      tags: [contracts]
+      summary: Create a sale or rental contract
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContractBody"
+      responses:
+        "201":
+          description: Contract created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /contracts/{id}:
+    get:
+      operationId: getContract
+      tags: [contracts]
+      summary: Get contract details
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Contract details
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Contract"
+
+  /wallet/balance:
+    get:
+      operationId: getWalletBalance
+      tags: [wallet]
+      summary: Get current wallet balance and transactions
+      responses:
+        "200":
+          description: Wallet info
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Wallet"
+
+  /wallet/deposit:
+    post:
+      operationId: walletDeposit
+      tags: [wallet]
+      summary: Deposit funds to wallet (payment initiation)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletTransactionBody"
+      responses:
+        "201":
+          description: Transaction recorded
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletTransaction"
+
+  /wallet/transfer:
+    post:
+      operationId: walletTransfer
+      tags: [wallet]
+      summary: Transfer funds from escrow to owner
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/WalletTransactionBody"
+      responses:
+        "201":
+          description: Transfer completed
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WalletTransaction"
+
+  /stats/summary:
+    get:
+      operationId: getPlatformStats
+      tags: [stats]
+      summary: Get platform-wide statistics summary
+      responses:
+        "200":
+          description: Stats summary
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlatformStats"
+
+  /stats/recent-activity:
+    get:
+      operationId: getRecentActivity
+      tags: [stats]
+      summary: Get recent platform activity
+      responses:
+        "200":
+          description: Recent activity list
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ActivityItem"
+
 components:
   schemas:
     HealthStatus:
@@ -34,3 +397,359 @@ components:
       required:
         - status
 
+    FoodTruck:
+      type: object
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        activityType:
+          type: string
+          enum: [food, beverages]
+        capacity:
+          type: string
+          enum: [one, two, more]
+        dimensions:
+          type: string
+        operatorsCount:
+          type: integer
+        withEquipment:
+          type: boolean
+        licensed:
+          type: boolean
+        location:
+          type: string
+        price:
+          type: number
+        listingType:
+          type: string
+          enum: [sale, rent]
+        images:
+          type: array
+          items:
+            type: string
+        ownerName:
+          type: string
+        ownerLogo:
+          type: string
+        available:
+          type: boolean
+        description:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - name
+        - activityType
+        - capacity
+        - price
+        - listingType
+        - location
+        - licensed
+        - withEquipment
+        - available
+        - ownerName
+        - createdAt
+
+    CreateFoodTruckBody:
+      type: object
+      properties:
+        name:
+          type: string
+        activityType:
+          type: string
+          enum: [food, beverages]
+        capacity:
+          type: string
+          enum: [one, two, more]
+        dimensions:
+          type: string
+        operatorsCount:
+          type: integer
+        withEquipment:
+          type: boolean
+        licensed:
+          type: boolean
+        location:
+          type: string
+        price:
+          type: number
+        listingType:
+          type: string
+          enum: [sale, rent]
+        images:
+          type: array
+          items:
+            type: string
+        ownerName:
+          type: string
+        ownerLogo:
+          type: string
+        description:
+          type: string
+      required:
+        - name
+        - activityType
+        - capacity
+        - price
+        - listingType
+        - location
+        - licensed
+        - withEquipment
+        - ownerName
+
+    UpdateAvailabilityBody:
+      type: object
+      properties:
+        available:
+          type: boolean
+      required:
+        - available
+
+    Inquiry:
+      type: object
+      properties:
+        id:
+          type: integer
+        truckId:
+          type: integer
+        truckName:
+          type: string
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        message:
+          type: string
+        status:
+          type: string
+          enum: [pending, confirmed, rejected]
+        createdAt:
+          type: string
+        respondedAt:
+          type: string
+      required:
+        - id
+        - truckId
+        - customerName
+        - customerEmail
+        - status
+        - createdAt
+
+    CreateInquiryBody:
+      type: object
+      properties:
+        truckId:
+          type: integer
+        customerName:
+          type: string
+        customerEmail:
+          type: string
+        customerPhone:
+          type: string
+        message:
+          type: string
+      required:
+        - truckId
+        - customerName
+        - customerEmail
+
+    RespondToInquiryBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [confirmed, rejected]
+      required:
+        - status
+
+    Contract:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [sale, rent]
+        truckId:
+          type: integer
+        truckName:
+          type: string
+        ownerName:
+          type: string
+        ownerEmail:
+          type: string
+        buyerName:
+          type: string
+        buyerEmail:
+          type: string
+        price:
+          type: number
+        depositAmount:
+          type: number
+        remainingAmount:
+          type: number
+        rentalDuration:
+          type: string
+          enum: [monthly, yearly]
+        terms:
+          type: string
+        status:
+          type: string
+          enum: [draft, active, completed]
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - truckId
+        - ownerName
+        - buyerName
+        - price
+        - status
+        - createdAt
+
+    CreateContractBody:
+      type: object
+      properties:
+        type:
+          type: string
+          enum: [sale, rent]
+        truckId:
+          type: integer
+        ownerName:
+          type: string
+        ownerEmail:
+          type: string
+        buyerName:
+          type: string
+        buyerEmail:
+          type: string
+        price:
+          type: number
+        depositAmount:
+          type: number
+        rentalDuration:
+          type: string
+          enum: [monthly, yearly]
+        terms:
+          type: string
+      required:
+        - type
+        - truckId
+        - ownerName
+        - buyerName
+        - price
+
+    Wallet:
+      type: object
+      properties:
+        balance:
+          type: number
+        escrowBalance:
+          type: number
+        totalDeposited:
+          type: number
+        totalTransferred:
+          type: number
+        transactions:
+          type: array
+          items:
+            $ref: "#/components/schemas/WalletTransaction"
+      required:
+        - balance
+        - escrowBalance
+        - totalDeposited
+        - totalTransferred
+        - transactions
+
+    WalletTransaction:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [deposit, transfer, escrow]
+        amount:
+          type: number
+        description:
+          type: string
+        contractId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - amount
+        - createdAt
+
+    WalletTransactionBody:
+      type: object
+      properties:
+        amount:
+          type: number
+        description:
+          type: string
+        contractId:
+          type: integer
+      required:
+        - amount
+
+    PlatformStats:
+      type: object
+      properties:
+        totalTrucks:
+          type: integer
+        trucksForSale:
+          type: integer
+        trucksForRent:
+          type: integer
+        availableTrucks:
+          type: integer
+        totalInquiries:
+          type: integer
+        pendingInquiries:
+          type: integer
+        confirmedInquiries:
+          type: integer
+        totalContracts:
+          type: integer
+        activeContracts:
+          type: integer
+        totalTransactionVolume:
+          type: number
+      required:
+        - totalTrucks
+        - trucksForSale
+        - trucksForRent
+        - availableTrucks
+        - totalInquiries
+        - pendingInquiries
+        - confirmedInquiries
+        - totalContracts
+        - activeContracts
+        - totalTransactionVolume
+
+    ActivityItem:
+      type: object
+      properties:
+        id:
+          type: integer
+        type:
+          type: string
+          enum: [truck_listed, inquiry_submitted, contract_created, payment_made]
+        description:
+          type: string
+        createdAt:
+          type: string
+      required:
+        - id
+        - type
+        - description
+        - createdAt
