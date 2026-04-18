@@ -24,6 +24,9 @@ pnpm workspace monorepo using TypeScript. Contains a Food Truck Marketplace plat
 - Arabic RTL interface (fully in Arabic, targeting Saudi Arabia)
 - Yellow & Black branding
 - Food truck listings with advanced filter (activity type, capacity, location, license, sale/rent)
+- Truck image upload (multer, stored in `artifacts/api-server/uploads/`, served at `/api/uploads/<file>`)
+- Edit existing truck listings (pre-filled form at `/edit-truck/:id`, provider-only)
+- Shared TruckForm component (`src/components/truck-form.tsx`) used by both create and edit pages
 - Availability inquiry system
 - Digital wallet with escrow payment system
 - Sale & rental contract management (digitally documented)

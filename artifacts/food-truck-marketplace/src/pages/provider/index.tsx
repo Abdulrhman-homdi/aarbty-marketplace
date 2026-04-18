@@ -21,7 +21,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Truck, PlusCircle, MessageSquare, FileText, TrendingUp,
   CheckCircle2, Clock, XCircle, MapPin, Eye, ToggleLeft, ToggleRight,
-  Wallet, ArrowDownToLine, ScrollText, ChevronLeft, AlertCircle, User
+  Wallet, ArrowDownToLine, ScrollText, ChevronLeft, AlertCircle, User, Pencil
 } from "lucide-react";
 
 export default function ProviderDashboard() {
@@ -341,9 +341,14 @@ export default function ProviderDashboard() {
                         {truck.price.toLocaleString("ar-SA")} <span className="text-xs text-muted-foreground font-normal">ريال</span>
                       </div>
                       <div className="flex items-center gap-2">
-                        <Link href={`/trucks/${truck.id}`} className="flex-1">
-                          <Button variant="outline" size="sm" className="w-full gap-1.5 text-xs">
+                        <Link href={`/trucks/${truck.id}`}>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs">
                             <Eye className="w-3.5 h-3.5" />عرض
+                          </Button>
+                        </Link>
+                        <Link href={`/edit-truck/${truck.id}`}>
+                          <Button variant="outline" size="sm" className="gap-1.5 text-xs border-primary/40 text-primary hover:bg-primary/10">
+                            <Pencil className="w-3.5 h-3.5" />تعديل
                           </Button>
                         </Link>
                         <Button

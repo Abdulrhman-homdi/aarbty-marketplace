@@ -5,6 +5,7 @@ import inquiriesRouter from "./inquiries";
 import contractsRouter from "./contracts";
 import walletRouter from "./wallet";
 import statsRouter from "./stats";
+import uploadRouter from "./upload";
 
 const router: IRouter = Router();
 
@@ -14,5 +15,6 @@ router.use(inquiriesRouter);
 router.use(contractsRouter);
 router.use(walletRouter);
 router.use(statsRouter);
+router.use(uploadRouter);
 
 export default router;

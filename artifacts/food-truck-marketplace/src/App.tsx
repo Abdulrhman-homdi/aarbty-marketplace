@@ -19,6 +19,7 @@ import InquiryForm from "@/pages/inquiry/[id]";
 import ProviderDashboard from "@/pages/provider/index";
 import MyAccount from "@/pages/my-account/index";
 import AdminDashboard from "@/pages/admin/index";
+import EditTruck from "@/pages/edit-truck";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -60,6 +61,11 @@ function Router() {
           </Route>
           <Route path="/inquiry/:id" component={InquiryForm} />
           <Route path="/login" component={LoginPage} />
+          <Route path="/edit-truck/:id">
+            <ProtectedRoute requiredRole="provider">
+              <EditTruck />
+            </ProtectedRoute>
+          </Route>
           <Route path="/provider">
             <ProtectedRoute requiredRole="provider">
               <ProviderDashboard />
