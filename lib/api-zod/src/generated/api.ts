@@ -193,6 +193,7 @@ export const ListInquiriesResponseItem = zod.object({
   customerName: zod.string(),
   customerEmail: zod.string(),
   customerPhone: zod.string().optional(),
+  type: zod.enum(["sale", "rent"]).optional(),
   message: zod.string().optional(),
   status: zod.enum(["pending", "confirmed", "rejected"]),
   createdAt: zod.string(),
@@ -208,6 +209,7 @@ export const CreateInquiryBody = zod.object({
   customerName: zod.string(),
   customerEmail: zod.string(),
   customerPhone: zod.string().optional(),
+  type: zod.enum(["sale", "rent"]).optional().default("rent"),
   message: zod.string().optional(),
 });
 
