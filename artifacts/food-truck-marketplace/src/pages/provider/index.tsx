@@ -87,7 +87,7 @@ export default function ProviderDashboard() {
           truckId: parseInt(contractForm.truckId),
           truckName: truck?.name ?? contractForm.truckName,
           buyerName: contractForm.buyerName,
-          sellerName: user?.name ?? "مقدم الخدمة",
+          ownerName: user?.name ?? "مقدم الخدمة",
           price: parseFloat(contractForm.price),
           type: contractForm.type,
           startDate: contractForm.startDate || undefined,

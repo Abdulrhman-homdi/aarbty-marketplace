@@ -12,7 +12,7 @@ import {
   getListInquiriesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, ArrowRight, CheckCircle, Truck } from "lucide-react";
+import { MessageSquare, ArrowRight, CheckCircle, Truck, ShoppingBag, Key } from "lucide-react";
 
 export default function InquiryForm() {
   const { id } = useParams<{ id: string }>();
@@ -32,6 +32,7 @@ export default function InquiryForm() {
     customerEmail: "",
     customerPhone: "",
     message: "",
+    type: "rent" as "sale" | "rent",
   });
 
   function handleChange(field: string, value: string) {
@@ -50,6 +51,7 @@ export default function InquiryForm() {
           customerEmail: form.customerEmail,
           customerPhone: form.customerPhone || undefined,
           message: form.message || undefined,
+          type: form.type,
         },
       },
       {
@@ -128,6 +130,27 @@ export default function InquiryForm() {
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-5">
+              <div className="space-y-2">
+                <Label className="font-bold">نوع الطلب <span className="text-destructive">*</span></Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <button
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, type: "rent" }))}
+                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 font-bold transition-all ${form.type === "rent" ? "border-primary bg-primary/10 text-primary" : "border-muted text-muted-foreground hover:border-primary/40"}`}
+                  >
+                    <Key className="w-5 h-5" />
+                    استفسار عن إيجار
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setForm(p => ({ ...p, type: "sale" }))}
+                    className={`flex items-center justify-center gap-2 p-4 rounded-xl border-2 font-bold transition-all ${form.type === "sale" ? "border-primary bg-primary/10 text-primary" : "border-muted text-muted-foreground hover:border-primary/40"}`}
+                  >
+                    <ShoppingBag className="w-5 h-5" />
+                    استفسار عن شراء
+                  </button>
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label className="font-bold">
                   الاسم الكامل <span className="text-destructive">*</span>

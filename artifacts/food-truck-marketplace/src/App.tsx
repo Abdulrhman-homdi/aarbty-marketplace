@@ -33,11 +33,31 @@ function Router() {
           <Route path="/" component={Home} />
           <Route path="/trucks" component={TrucksList} />
           <Route path="/trucks/:id" component={TruckDetail} />
-          <Route path="/list-truck" component={ListTruck} />
-          <Route path="/dashboard" component={Dashboard} />
-          <Route path="/wallet" component={Wallet} />
-          <Route path="/contracts" component={ContractsList} />
-          <Route path="/contracts/:id" component={ContractDetail} />
+          <Route path="/list-truck">
+            <ProtectedRoute requiredRole="provider">
+              <ListTruck />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/dashboard">
+            <ProtectedRoute>
+              <Dashboard />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/wallet">
+            <ProtectedRoute>
+              <Wallet />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/contracts">
+            <ProtectedRoute>
+              <ContractsList />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/contracts/:id">
+            <ProtectedRoute>
+              <ContractDetail />
+            </ProtectedRoute>
+          </Route>
           <Route path="/inquiry/:id" component={InquiryForm} />
           <Route path="/login" component={LoginPage} />
           <Route path="/provider">
