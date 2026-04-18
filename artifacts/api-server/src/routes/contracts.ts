@@ -17,8 +17,13 @@ function serializeContract(c: DbContract) {
   return {
     ...c,
     price: Number(c.price),
-    depositAmount: c.depositAmount ? Number(c.depositAmount) : undefined,
-    remainingAmount: c.remainingAmount ? Number(c.remainingAmount) : undefined,
+    depositAmount: c.depositAmount != null ? Number(c.depositAmount) : undefined,
+    remainingAmount: c.remainingAmount != null ? Number(c.remainingAmount) : undefined,
+    truckName: c.truckName ?? undefined,
+    buyerName: c.buyerName ?? undefined,
+    sellerName: c.sellerName ?? undefined,
+    startDate: c.startDate ?? undefined,
+    endDate: c.endDate ?? undefined,
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
   };
 }

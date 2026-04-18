@@ -17,8 +17,10 @@ type DbInquiry = typeof inquiriesTable.$inferSelect;
 function serializeInquiry(i: DbInquiry) {
   return {
     ...i,
-    createdAt: i.createdAt instanceof Date ? i.createdAt.toISOString() : String(i.createdAt),
+    truckName: i.truckName ?? undefined,
+    message: i.message ?? undefined,
     respondedAt: i.respondedAt instanceof Date ? i.respondedAt.toISOString() : (i.respondedAt ?? undefined),
+    createdAt: i.createdAt instanceof Date ? i.createdAt.toISOString() : String(i.createdAt),
   };
 }
 

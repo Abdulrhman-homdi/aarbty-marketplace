@@ -14,6 +14,7 @@ function serializeTx(t: DbTx) {
   return {
     ...t,
     amount: Number(t.amount),
+    contractId: t.contractId ?? undefined,
     createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : String(t.createdAt),
   };
 }

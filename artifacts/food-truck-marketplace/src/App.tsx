@@ -3,6 +3,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Navbar } from "@/components/layout/navbar";
+import { Footer } from "@/components/layout/footer";
 
 import Home from "@/pages/home";
 import TrucksList from "@/pages/trucks/index";
@@ -13,6 +14,9 @@ import Wallet from "@/pages/wallet/index";
 import ContractsList from "@/pages/contracts/index";
 import ContractDetail from "@/pages/contracts/[id]";
 import InquiryForm from "@/pages/inquiry/[id]";
+import ProviderDashboard from "@/pages/provider/index";
+import MyAccount from "@/pages/my-account/index";
+import AdminDashboard from "@/pages/admin/index";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -32,9 +36,13 @@ function Router() {
           <Route path="/contracts" component={ContractsList} />
           <Route path="/contracts/:id" component={ContractDetail} />
           <Route path="/inquiry/:id" component={InquiryForm} />
+          <Route path="/provider" component={ProviderDashboard} />
+          <Route path="/my-account" component={MyAccount} />
+          <Route path="/admin" component={AdminDashboard} />
           <Route component={NotFound} />
         </Switch>
       </main>
+      <Footer />
     </div>
   );
 }

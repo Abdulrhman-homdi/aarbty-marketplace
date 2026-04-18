@@ -116,7 +116,7 @@ export default function TruckDetail() {
               </Link>
               
               <p className="text-center text-sm text-muted-foreground mt-4">
-                الدفع يتم عبر منصة سوق عربات الفود ترك لضمان حقوقك
+                الدفع يتم عبر منصة عربتي لضمان حقوقك
               </p>
             </div>
           </div>
