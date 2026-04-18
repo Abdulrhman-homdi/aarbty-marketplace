@@ -19,11 +19,15 @@ function serializeContract(c: DbContract) {
     price: Number(c.price),
     depositAmount: c.depositAmount != null ? Number(c.depositAmount) : undefined,
     remainingAmount: c.remainingAmount != null ? Number(c.remainingAmount) : undefined,
+    monthlyPayment: c.monthlyPayment != null ? Number(c.monthlyPayment) : undefined,
+    rentalPeriodCount: c.rentalPeriodCount ?? undefined,
     truckName: c.truckName ?? undefined,
-    buyerName: c.buyerName ?? undefined,
-    sellerName: c.sellerName ?? undefined,
-    startDate: c.startDate ?? undefined,
-    endDate: c.endDate ?? undefined,
+    ownerEmail: c.ownerEmail ?? undefined,
+    buyerEmail: c.buyerEmail ?? undefined,
+    rentalDuration: (c.rentalDuration as "monthly" | "yearly" | undefined) ?? undefined,
+    startDate: c.startDate instanceof Date ? c.startDate.toISOString() : (c.startDate ?? undefined),
+    endDate: c.endDate instanceof Date ? c.endDate.toISOString() : (c.endDate ?? undefined),
+    terms: c.terms ?? undefined,
     createdAt: c.createdAt instanceof Date ? c.createdAt.toISOString() : String(c.createdAt),
   };
 }
@@ -49,16 +53,27 @@ router.post("/contracts", async (req, res): Promise<void> => {
     return;
   }
 
+  const { rentalPeriodCount, startDate, endDate, ...rest } = parsed.data;
+
   const depositAmount = parsed.data.depositAmount ?? parsed.data.price * 0.3;
   const remainingAmount = parsed.data.price - depositAmount;
+
+  let monthlyPayment: number | undefined;
+  if (parsed.data.type === "rent" && rentalPeriodCount && rentalPeriodCount > 1) {
+    monthlyPayment = remainingAmount / (rentalPeriodCount - 1);
+  }
 
   const [contract] = await db
     .insert(contractsTable)
     .values({
-      ...parsed.data,
-      price: String(parsed.data.price),
+      ...rest,
+      price: String(rest.price),
       depositAmount: String(depositAmount),
       remainingAmount: String(remainingAmount),
+      monthlyPayment: monthlyPayment != null ? String(monthlyPayment) : undefined,
+      rentalPeriodCount: rentalPeriodCount ?? undefined,
+      startDate: startDate ? new Date(startDate) : undefined,
+      endDate: endDate ? new Date(endDate) : undefined,
     })
     .returning();
 

@@ -7,7 +7,7 @@ import {
   useGetContract,
   getGetContractQueryKey,
 } from "@workspace/api-client-react";
-import { FileText, ArrowRight, Printer, User, Truck, DollarSign, Calendar } from "lucide-react";
+import { FileText, ArrowRight, Printer, User, Truck, DollarSign, Calendar, CalendarRange, ListOrdered, CheckCircle2, Clock } from "lucide-react";
 
 export default function ContractDetail() {
   const { id } = useParams<{ id: string }>();
@@ -138,29 +138,134 @@ export default function ContractDetail() {
               </div>
               <div className="space-y-3">
                 <div className="flex items-center justify-between p-3 bg-muted/30 rounded-lg">
-                  <span className="text-muted-foreground">القيمة الإجمالية</span>
+                  <span className="text-muted-foreground">القيمة الإجمالية للعقد</span>
                   <span className="font-black text-xl text-primary">
                     {Number(contract.price).toLocaleString("ar-SA")} ريال
                   </span>
                 </div>
-                {contract.depositAmount && (
+                {contract.depositAmount != null && (
                   <div className="flex items-center justify-between p-3 bg-orange-50 rounded-lg border border-orange-100">
-                    <span className="text-muted-foreground">العربون (الدفعة الأولى)</span>
+                    <span className="text-muted-foreground">الدفعة الأولى / العربون</span>
                     <span className="font-black text-orange-600">
                       {Number(contract.depositAmount).toLocaleString("ar-SA")} ريال
                     </span>
                   </div>
                 )}
-                {contract.remainingAmount && (
+                {contract.remainingAmount != null && (
                   <div className="flex items-center justify-between p-3 bg-blue-50 rounded-lg border border-blue-100">
-                    <span className="text-muted-foreground">المبلغ المتبقي</span>
+                    <span className="text-muted-foreground">المبلغ المتبقي بعد العربون</span>
                     <span className="font-black text-blue-600">
                       {Number(contract.remainingAmount).toLocaleString("ar-SA")} ريال
                     </span>
                   </div>
                 )}
+                {contract.type === "rent" && contract.monthlyPayment != null && (
+                  <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg border border-green-100">
+                    <span className="text-muted-foreground">
+                      قيمة القسط {contract.rentalDuration === "monthly" ? "الشهري" : "السنوي"}
+                    </span>
+                    <span className="font-black text-green-700">
+                      {Number(contract.monthlyPayment).toLocaleString("ar-SA", { maximumFractionDigits: 2 })} ريال
+                    </span>
+                  </div>
+                )}
               </div>
             </div>
+
+            {/* Rental Payment Schedule */}
+            {contract.type === "rent" && contract.rentalPeriodCount && contract.rentalPeriodCount > 1 && contract.monthlyPayment != null && (
+              <>
+                <Separator />
+                <div>
+                  <div className="flex items-center gap-2 mb-4">
+                    <ListOrdered className="w-5 h-5 text-primary" />
+                    <h3 className="font-black">جدول الدفعات التفصيلي</h3>
+                  </div>
+                  <div className="overflow-hidden rounded-xl border">
+                    <table className="w-full text-sm">
+                      <thead className="bg-muted/60">
+                        <tr>
+                          <th className="p-3 text-right font-bold text-muted-foreground">رقم الدفعة</th>
+                          <th className="p-3 text-right font-bold text-muted-foreground">نوع الدفعة</th>
+                          <th className="p-3 text-right font-bold text-muted-foreground">المبلغ (ريال)</th>
+                          <th className="p-3 text-right font-bold text-muted-foreground">الموعد</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {/* First payment = deposit */}
+                        <tr className="border-t bg-orange-50/50">
+                          <td className="p-3 font-bold">1</td>
+                          <td className="p-3">
+                            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-orange-100 text-orange-700 rounded-full text-xs font-bold">
+                              <CheckCircle2 className="w-3 h-3" />
+                              عربون
+                            </span>
+                          </td>
+                          <td className="p-3 font-black text-orange-600">
+                            {Number(contract.depositAmount).toLocaleString("ar-SA")}
+                          </td>
+                          <td className="p-3 text-muted-foreground">
+                            {contract.startDate
+                              ? new Date(contract.startDate).toLocaleDateString("ar-SA")
+                              : "عند التوقيع"}
+                          </td>
+                        </tr>
+                        {/* Remaining installments */}
+                        {Array.from({ length: contract.rentalPeriodCount - 1 }, (_, i) => {
+                          const installmentNum = i + 2;
+                          let dueDate: string | null = null;
+                          if (contract.startDate) {
+                            const d = new Date(contract.startDate);
+                            if (contract.rentalDuration === "monthly") {
+                              d.setMonth(d.getMonth() + i + 1);
+                            } else {
+                              d.setFullYear(d.getFullYear() + i + 1);
+                            }
+                            dueDate = d.toLocaleDateString("ar-SA");
+                          }
+                          return (
+                            <tr key={installmentNum} className={`border-t ${i % 2 === 0 ? "bg-white" : "bg-muted/20"}`}>
+                              <td className="p-3 font-bold">{installmentNum}</td>
+                              <td className="p-3">
+                                <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-100 text-blue-700 rounded-full text-xs font-bold">
+                                  <Clock className="w-3 h-3" />
+                                  قسط {contract.rentalDuration === "monthly" ? "شهري" : "سنوي"}
+                                </span>
+                              </td>
+                              <td className="p-3 font-black text-blue-700">
+                                {Number(contract.monthlyPayment).toLocaleString("ar-SA", { maximumFractionDigits: 2 })}
+                              </td>
+                              <td className="p-3 text-muted-foreground text-xs">
+                                {dueDate ?? "—"}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                      <tfoot className="bg-muted/60 border-t-2">
+                        <tr>
+                          <td colSpan={2} className="p-3 font-black">الإجمالي</td>
+                          <td className="p-3 font-black text-primary text-base">
+                            {Number(contract.price).toLocaleString("ar-SA")} ريال
+                          </td>
+                          <td className="p-3 text-xs text-muted-foreground">
+                            {contract.rentalPeriodCount} دفعة
+                          </td>
+                        </tr>
+                      </tfoot>
+                    </table>
+                  </div>
+                  {contract.startDate && contract.endDate && (
+                    <div className="flex items-center gap-3 mt-3 p-3 bg-muted/30 rounded-lg text-sm">
+                      <CalendarRange className="w-4 h-4 text-primary flex-shrink-0" />
+                      <span className="text-muted-foreground">
+                        مدة العقد من <strong>{new Date(contract.startDate).toLocaleDateString("ar-SA")}</strong> إلى <strong>{new Date(contract.endDate).toLocaleDateString("ar-SA")}</strong>
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </>
+            )}
 
             {contract.terms && (
               <>

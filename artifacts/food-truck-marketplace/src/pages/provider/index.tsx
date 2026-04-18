@@ -40,7 +40,17 @@ export default function ProviderDashboard() {
 
   const [depositAmount, setDepositAmount] = useState("");
   const [depositDesc, setDepositDesc] = useState("");
-  const [contractForm, setContractForm] = useState({ truckId: "", truckName: "", buyerName: "", price: "", type: "sale" as "sale" | "rent", startDate: "", endDate: "" });
+  const [contractForm, setContractForm] = useState({
+    truckId: "",
+    buyerName: "",
+    price: "",
+    depositAmount: "",
+    type: "sale" as "sale" | "rent",
+    rentalDuration: "monthly" as "monthly" | "yearly",
+    rentalPeriodCount: "",
+    startDate: "",
+    endDate: "",
+  });
   const [contractOpen, setContractOpen] = useState(false);
   const [selectedInqId, setSelectedInqId] = useState<number | null>(null);
 
@@ -81,15 +91,22 @@ export default function ProviderDashboard() {
   function handleCreateContract(e: React.FormEvent) {
     e.preventDefault();
     const truck = trucks?.find(t => t.id === parseInt(contractForm.truckId));
+    const price = parseFloat(contractForm.price);
+    const deposit = contractForm.depositAmount ? parseFloat(contractForm.depositAmount) : undefined;
+    const periodCount = contractForm.rentalPeriodCount ? parseInt(contractForm.rentalPeriodCount) : undefined;
+
     createContractMutation.mutate(
       {
         data: {
           truckId: parseInt(contractForm.truckId),
-          truckName: truck?.name ?? contractForm.truckName,
+          truckName: truck?.name,
           buyerName: contractForm.buyerName,
           ownerName: user?.name ?? "مقدم الخدمة",
-          price: parseFloat(contractForm.price),
+          price,
           type: contractForm.type,
+          depositAmount: deposit,
+          rentalDuration: contractForm.type === "rent" ? contractForm.rentalDuration : undefined,
+          rentalPeriodCount: contractForm.type === "rent" ? periodCount : undefined,
           startDate: contractForm.startDate || undefined,
           endDate: contractForm.endDate || undefined,
         },
@@ -97,7 +114,7 @@ export default function ProviderDashboard() {
       {
         onSuccess: () => {
           setContractOpen(false);
-          setContractForm({ truckId: "", truckName: "", buyerName: "", price: "", type: "sale", startDate: "", endDate: "" });
+          setContractForm({ truckId: "", buyerName: "", price: "", depositAmount: "", type: "sale", rentalDuration: "monthly", rentalPeriodCount: "", startDate: "", endDate: "" });
           invalidateAll();
         },
       }
@@ -130,7 +147,7 @@ export default function ProviderDashboard() {
                     إنشاء عقد
                   </Button>
                 </DialogTrigger>
-                <DialogContent className="sm:max-w-md">
+                <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto">
                   <DialogHeader>
                     <DialogTitle className="font-black text-xl">إنشاء عقد جديد</DialogTitle>
                   </DialogHeader>
@@ -155,24 +172,73 @@ export default function ProviderDashboard() {
                       </Select>
                     </div>
                     <div className="space-y-2">
-                      <Label className="font-bold">اسم المشتري/المستأجر</Label>
+                      <Label className="font-bold">اسم المشتري / المستأجر</Label>
                       <Input placeholder="الاسم الكامل" value={contractForm.buyerName} onChange={e => setContractForm(p => ({ ...p, buyerName: e.target.value }))} required />
                     </div>
-                    <div className="space-y-2">
-                      <Label className="font-bold">السعر (ريال)</Label>
-                      <Input type="number" placeholder="0" value={contractForm.price} onChange={e => setContractForm(p => ({ ...p, price: e.target.value }))} required />
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-2">
+                        <Label className="font-bold">القيمة الإجمالية (ريال)</Label>
+                        <Input type="number" min="1" placeholder="0" value={contractForm.price} onChange={e => setContractForm(p => ({ ...p, price: e.target.value }))} required />
+                      </div>
+                      <div className="space-y-2">
+                        <Label className="font-bold">الدفعة الأولى / العربون</Label>
+                        <Input type="number" min="0" placeholder="30% تلقائياً" value={contractForm.depositAmount} onChange={e => setContractForm(p => ({ ...p, depositAmount: e.target.value }))} />
+                      </div>
                     </div>
                     {contractForm.type === "rent" && (
-                      <div className="grid grid-cols-2 gap-3">
-                        <div className="space-y-2">
-                          <Label className="font-bold">تاريخ البداية</Label>
-                          <Input type="date" value={contractForm.startDate} onChange={e => setContractForm(p => ({ ...p, startDate: e.target.value }))} />
+                      <>
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="font-bold">دورية السداد</Label>
+                            <Select value={contractForm.rentalDuration} onValueChange={v => setContractForm(p => ({ ...p, rentalDuration: v as "monthly" | "yearly" }))}>
+                              <SelectTrigger><SelectValue /></SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="monthly">شهرياً</SelectItem>
+                                <SelectItem value="yearly">سنوياً</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="font-bold">عدد الأقساط</Label>
+                            <Input type="number" min="2" placeholder="مثال: 12" value={contractForm.rentalPeriodCount} onChange={e => setContractForm(p => ({ ...p, rentalPeriodCount: e.target.value }))} />
+                          </div>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="font-bold">تاريخ النهاية</Label>
-                          <Input type="date" value={contractForm.endDate} onChange={e => setContractForm(p => ({ ...p, endDate: e.target.value }))} />
+                        <div className="grid grid-cols-2 gap-3">
+                          <div className="space-y-2">
+                            <Label className="font-bold">تاريخ البداية</Label>
+                            <Input type="date" value={contractForm.startDate} onChange={e => setContractForm(p => ({ ...p, startDate: e.target.value }))} />
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="font-bold">تاريخ النهاية</Label>
+                            <Input type="date" value={contractForm.endDate} onChange={e => setContractForm(p => ({ ...p, endDate: e.target.value }))} />
+                          </div>
                         </div>
-                      </div>
+                        {contractForm.price && contractForm.rentalPeriodCount && parseInt(contractForm.rentalPeriodCount) > 1 && (
+                          <div className="p-3 bg-primary/10 rounded-xl border border-primary/20">
+                            <p className="text-xs text-muted-foreground mb-1">معاينة جدول الدفعات</p>
+                            <div className="flex justify-between items-center">
+                              <span className="text-sm font-bold">الدفعة الأولى</span>
+                              <span className="font-black text-primary">
+                                {(contractForm.depositAmount ? parseFloat(contractForm.depositAmount) : parseFloat(contractForm.price) * 0.3).toLocaleString("ar-SA")} ريال
+                              </span>
+                            </div>
+                            <div className="flex justify-between items-center mt-1">
+                              <span className="text-sm font-bold">
+                                {parseInt(contractForm.rentalPeriodCount) - 1} قسط {contractForm.rentalDuration === "monthly" ? "شهري" : "سنوي"}
+                              </span>
+                              <span className="font-black text-green-700">
+                                {(() => {
+                                  const price = parseFloat(contractForm.price);
+                                  const dep = contractForm.depositAmount ? parseFloat(contractForm.depositAmount) : price * 0.3;
+                                  const remaining = price - dep;
+                                  const installment = remaining / (parseInt(contractForm.rentalPeriodCount) - 1);
+                                  return installment.toLocaleString("ar-SA", { maximumFractionDigits: 2 });
+                                })()} ريال / قسط
+                              </span>
+                            </div>
+                          </div>
+                        )}
+                      </>
                     )}
                     <Button type="submit" className="w-full font-bold" disabled={createContractMutation.isPending}>
                       {createContractMutation.isPending ? "جاري الإنشاء..." : "إنشاء العقد"}

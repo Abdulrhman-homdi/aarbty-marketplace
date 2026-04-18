@@ -22,6 +22,10 @@ export const contractsTable = pgTable("contracts", {
   depositAmount: numeric("deposit_amount", { precision: 12, scale: 2 }),
   remainingAmount: numeric("remaining_amount", { precision: 12, scale: 2 }),
   rentalDuration: text("rental_duration"),
+  rentalPeriodCount: integer("rental_period_count"),
+  monthlyPayment: numeric("monthly_payment", { precision: 12, scale: 2 }),
+  startDate: timestamp("start_date", { withTimezone: true }),
+  endDate: timestamp("end_date", { withTimezone: true }),
   terms: text("terms"),
   status: text("status").notNull().default("draft"),
   createdAt: timestamp("created_at", { withTimezone: true })
