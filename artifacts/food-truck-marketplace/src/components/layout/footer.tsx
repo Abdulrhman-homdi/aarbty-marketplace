@@ -1,5 +1,26 @@
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Truck, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+
+function ProtectedLink({ href, label }: { href: string; label: string }) {
+  const { user } = useAuth();
+  const [, navigate] = useLocation();
+
+  function handleClick(e: React.MouseEvent) {
+    e.preventDefault();
+    if (user) {
+      navigate(href);
+    } else {
+      navigate("/login");
+    }
+  }
+
+  return (
+    <a href={href} onClick={handleClick} className="hover:text-primary transition-colors cursor-pointer">
+      {label}
+    </a>
+  );
+}
 
 export function Footer() {
   return (
@@ -32,19 +53,21 @@ export function Footer() {
           <div className="space-y-4">
             <h3 className="text-lg font-bold text-primary">روابط سريعة</h3>
             <ul className="space-y-2 text-gray-400 text-sm">
-              {[
-                { href: "/", label: "الرئيسية" },
-                { href: "/trucks", label: "تصفح العربات" },
-                { href: "/list-truck", label: "أضف عربتك" },
-                { href: "/contracts", label: "العقود الرقمية" },
-                { href: "/wallet", label: "المحفظة" },
-              ].map(link => (
-                <li key={link.href}>
-                  <Link href={link.href} className="hover:text-primary transition-colors">
-                    {link.label}
-                  </Link>
-                </li>
-              ))}
+              <li>
+                <Link href="/" className="hover:text-primary transition-colors">الرئيسية</Link>
+              </li>
+              <li>
+                <Link href="/trucks" className="hover:text-primary transition-colors">تصفح العربات</Link>
+              </li>
+              <li>
+                <ProtectedLink href="/list-truck" label="أضف عربتك" />
+              </li>
+              <li>
+                <ProtectedLink href="/contracts" label="العقود الرقمية" />
+              </li>
+              <li>
+                <ProtectedLink href="/wallet" label="المحفظة" />
+              </li>
             </ul>
           </div>
 
@@ -59,9 +82,7 @@ export function Footer() {
                 { href: "/dashboard", label: "لوحة التحكم" },
               ].map(link => (
                 <li key={link.href}>
-                  <Link href={link.href} className="hover:text-primary transition-colors">
-                    {link.label}
-                  </Link>
+                  <ProtectedLink href={link.href} label={link.label} />
                 </li>
               ))}
             </ul>
