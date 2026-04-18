@@ -2,8 +2,10 @@ import { Switch, Route, Router as WouterRouter } from "wouter";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
+import { AuthProvider } from "@/context/auth-context";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
+import { ProtectedRoute } from "@/components/protected-route";
 
 import Home from "@/pages/home";
 import TrucksList from "@/pages/trucks/index";
@@ -17,6 +19,7 @@ import InquiryForm from "@/pages/inquiry/[id]";
 import ProviderDashboard from "@/pages/provider/index";
 import MyAccount from "@/pages/my-account/index";
 import AdminDashboard from "@/pages/admin/index";
+import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
 const queryClient = new QueryClient();
@@ -36,9 +39,22 @@ function Router() {
           <Route path="/contracts" component={ContractsList} />
           <Route path="/contracts/:id" component={ContractDetail} />
           <Route path="/inquiry/:id" component={InquiryForm} />
-          <Route path="/provider" component={ProviderDashboard} />
-          <Route path="/my-account" component={MyAccount} />
-          <Route path="/admin" component={AdminDashboard} />
+          <Route path="/login" component={LoginPage} />
+          <Route path="/provider">
+            <ProtectedRoute requiredRole="provider">
+              <ProviderDashboard />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/my-account">
+            <ProtectedRoute requiredRole="customer">
+              <MyAccount />
+            </ProtectedRoute>
+          </Route>
+          <Route path="/admin">
+            <ProtectedRoute requiredRole="admin">
+              <AdminDashboard />
+            </ProtectedRoute>
+          </Route>
           <Route component={NotFound} />
         </Switch>
       </main>
@@ -51,9 +67,11 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
-        <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
-          <Router />
-        </WouterRouter>
+        <AuthProvider>
+          <WouterRouter base={import.meta.env.BASE_URL.replace(/\/$/, "")}>
+            <Router />
+          </WouterRouter>
+        </AuthProvider>
         <Toaster />
       </TooltipProvider>
     </QueryClientProvider>
