@@ -6,7 +6,7 @@ import {
   useListContracts,
   getListContractsQueryKey,
 } from "@workspace/api-client-react";
-import { FileText, Eye, CheckCircle, Clock, XCircle } from "lucide-react";
+import { FileText, Eye, CheckCircle, Clock, XCircle, ListOrdered } from "lucide-react";
 
 export default function ContractsList() {
   const { data: contracts, isLoading } = useListContracts(
@@ -97,22 +97,42 @@ export default function ContractsList() {
                             </div>
                           )}
                         </div>
-                        {contract.rentalDuration && (
-                          <p className="text-xs text-muted-foreground mt-2">
-                            مدة الإيجار: {contract.rentalDuration === "monthly" ? "شهري" : "سنوي"}
-                          </p>
+                        {contract.type === "rent" && contract.monthlyPayment != null && (
+                          <div className="flex items-center gap-2 mt-3 p-2.5 bg-green-50 rounded-lg border border-green-100">
+                            <ListOrdered className="w-4 h-4 text-green-700 shrink-0" />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-xs text-green-700 font-bold">
+                                {contract.rentalPeriodCount ? `${contract.rentalPeriodCount} دفعة` : ""}
+                                {" · "}
+                                قيمة القسط {contract.rentalDuration === "monthly" ? "الشهري" : "السنوي"}:{" "}
+                                <span className="font-black">
+                                  {Number(contract.monthlyPayment).toLocaleString("ar-SA", { maximumFractionDigits: 2 })} ريال
+                                </span>
+                              </span>
+                            </div>
+                          </div>
                         )}
-                        <p className="text-xs text-muted-foreground mt-1">
+                        <p className="text-xs text-muted-foreground mt-2">
                           تاريخ الإنشاء: {new Date(contract.createdAt).toLocaleDateString("ar-SA")}
                         </p>
                       </div>
                     </div>
-                    <Link href={`/contracts/${contract.id}`}>
-                      <Button variant="outline" size="sm" className="gap-2 flex-shrink-0">
-                        <Eye className="w-4 h-4" />
-                        عرض
-                      </Button>
-                    </Link>
+                    <div className="flex flex-col gap-2 flex-shrink-0">
+                      <Link href={`/contracts/${contract.id}`}>
+                        <Button variant="outline" size="sm" className="gap-2 w-full">
+                          <Eye className="w-4 h-4" />
+                          عرض
+                        </Button>
+                      </Link>
+                      {contract.type === "rent" && contract.monthlyPayment != null && (
+                        <Link href={`/contracts/${contract.id}`}>
+                          <Button size="sm" className="gap-2 w-full text-xs font-bold">
+                            <ListOrdered className="w-3.5 h-3.5" />
+                            جدول الدفعات
+                          </Button>
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </CardContent>
               </Card>
