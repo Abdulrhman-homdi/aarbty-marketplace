@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Store, Truck, Wallet, FileText, PlusCircle, Menu,
-  ShieldCheck, User, ChevronDown, LogOut, LogIn
+  User, ChevronDown, LogOut, LogIn
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -39,13 +39,6 @@ export function Navbar() {
     { href: "/contracts", label: "العقود", icon: FileText },
   ];
 
-  const portalLinks = [
-    { href: "/provider", label: "بوابة مقدم الخدمة", icon: Truck },
-    { href: "/my-account", label: "بوابة المستفيد", icon: User },
-    { href: "/admin", label: "لوحة الإدارة", icon: ShieldCheck },
-    { href: "/dashboard", label: "لوحة التحكم", icon: Store },
-  ];
-
   function handleLogout() {
     logout();
     navigate("/");
@@ -73,46 +66,6 @@ export function Navbar() {
               </Link>
             ))}
 
-            {/* Portals Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button
-                  variant="ghost"
-                  className={`gap-2 text-muted-foreground ${portalLinks.some(p => p.href === location) ? "text-foreground font-bold" : ""}`}
-                >
-                  <User className="w-4 h-4" />
-                  البوابات
-                  <ChevronDown className="w-3.5 h-3.5 opacity-60" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-52">
-                <DropdownMenuItem asChild>
-                  <Link href="/provider" className="flex items-center gap-2 cursor-pointer">
-                    <Truck className="w-4 h-4 text-primary" />
-                    بوابة مقدم الخدمة
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/my-account" className="flex items-center gap-2 cursor-pointer">
-                    <User className="w-4 h-4 text-blue-500" />
-                    بوابة المستفيد
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/dashboard" className="flex items-center gap-2 cursor-pointer">
-                    <Store className="w-4 h-4 text-muted-foreground" />
-                    لوحة التحكم
-                  </Link>
-                </DropdownMenuItem>
-                <DropdownMenuItem asChild>
-                  <Link href="/admin" className="flex items-center gap-2 cursor-pointer">
-                    <ShieldCheck className="w-4 h-4 text-orange-500" />
-                    لوحة الإدارة
-                  </Link>
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </nav>
         </div>
 
@@ -195,20 +148,6 @@ export function Navbar() {
                 <nav className="flex flex-col gap-1">
                   <p className="text-xs text-muted-foreground font-bold px-2 mb-1">الرئيسية</p>
                   {mainLinks.map((link) => (
-                    <Link key={link.href} href={link.href}>
-                      <Button
-                        variant={location === link.href ? "secondary" : "ghost"}
-                        className="w-full justify-start gap-3"
-                      >
-                        <link.icon className="w-5 h-5" />
-                        {link.label}
-                      </Button>
-                    </Link>
-                  ))}
-
-                  <div className="h-px bg-border my-3" />
-                  <p className="text-xs text-muted-foreground font-bold px-2 mb-1">البوابات</p>
-                  {portalLinks.map((link) => (
                     <Link key={link.href} href={link.href}>
                       <Button
                         variant={location === link.href ? "secondary" : "ghost"}
