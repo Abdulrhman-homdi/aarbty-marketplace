@@ -199,19 +199,6 @@ export default function LoginPage() {
             </Card>
           </TabsContent>
         </Tabs>
-
-        {/* Role icons legend */}
-        <div className="flex justify-center gap-6 text-xs text-muted-foreground">
-          {(Object.entries(ROLE_META) as [keyof typeof ROLE_META, typeof ROLE_META[keyof typeof ROLE_META]][]).map(([, meta]) => {
-            const Icon = meta.icon;
-            return (
-              <div key={meta.label} className="flex items-center gap-1.5">
-                <Icon className={`w-3.5 h-3.5 ${meta.color}`} />
-                <span>{meta.label}</span>
-              </div>
-            );
-          })}
-        </div>
       </div>
     </div>
   );
