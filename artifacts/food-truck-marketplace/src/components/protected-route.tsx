@@ -9,8 +9,16 @@ interface ProtectedRouteProps {
 }
 
 export function ProtectedRoute({ children, requiredRole }: ProtectedRouteProps) {
-  const { user, isAuthenticated } = useAuth();
+  const { user, isAuthenticated, isLoading } = useAuth();
   const [, navigate] = useLocation();
+
+  if (isLoading) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <div className="animate-pulse text-muted-foreground text-sm">جاري التحقق...</div>
+      </div>
+    );
+  }
 
   if (!isAuthenticated) {
     return (

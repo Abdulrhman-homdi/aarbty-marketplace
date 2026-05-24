@@ -221,6 +221,9 @@ export interface CreateContractBody {
   price: number;
   depositAmount?: number;
   rentalDuration?: CreateContractBodyRentalDuration;
+  rentalPeriodCount?: number;
+  startDate?: string;
+  endDate?: string;
   terms?: string;
 }
 
@@ -400,6 +403,44 @@ export const UpdateManufacturingOrderStatusBodyStatus = {
 
 export interface UpdateManufacturingOrderStatusBody {
   status: UpdateManufacturingOrderStatusBodyStatus;
+}
+
+export type AuthUserRole = (typeof AuthUserRole)[keyof typeof AuthUserRole];
+
+export const AuthUserRole = {
+  provider: "provider",
+  customer: "customer",
+  admin: "admin",
+} as const;
+
+export interface AuthUser {
+  id: number;
+  name: string;
+  email: string;
+  role: AuthUserRole;
+  phone?: string | null;
+}
+
+export interface LoginBody {
+  email: string;
+  password: string;
+}
+
+export type RegisterBodyRole =
+  (typeof RegisterBodyRole)[keyof typeof RegisterBodyRole];
+
+export const RegisterBodyRole = {
+  provider: "provider",
+  customer: "customer",
+  admin: "admin",
+} as const;
+
+export interface RegisterBody {
+  name: string;
+  email: string;
+  password: string;
+  role?: RegisterBodyRole;
+  phone?: string;
 }
 
 export type ListFoodTrucksParams = {

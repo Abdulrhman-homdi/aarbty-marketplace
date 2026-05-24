@@ -8,6 +8,44 @@
 import * as zod from "zod";
 
 /**
+ * @summary Register a new user
+ */
+export const RegisterBody = zod.object({
+  name: zod.string(),
+  email: zod.string(),
+  password: zod.string(),
+  role: zod.enum(["provider", "customer", "admin"]).optional(),
+  phone: zod.string().optional(),
+});
+
+/**
+ * @summary Login with email and password
+ */
+export const LoginBody = zod.object({
+  email: zod.string(),
+  password: zod.string(),
+});
+
+export const LoginResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["provider", "customer", "admin"]),
+  phone: zod.string().nullish(),
+});
+
+/**
+ * @summary Get current authenticated user
+ */
+export const GetMeResponse = zod.object({
+  id: zod.number(),
+  name: zod.string(),
+  email: zod.string(),
+  role: zod.enum(["provider", "customer", "admin"]),
+  phone: zod.string().nullish(),
+});
+
+/**
  * @summary Health check
  */
 export const HealthCheckResponse = zod.object({
@@ -280,6 +318,9 @@ export const CreateContractBody = zod.object({
   price: zod.number(),
   depositAmount: zod.number().optional(),
   rentalDuration: zod.enum(["monthly", "yearly"]).optional(),
+  rentalPeriodCount: zod.number().optional(),
+  startDate: zod.string().optional(),
+  endDate: zod.string().optional(),
   terms: zod.string().optional(),
 });
 

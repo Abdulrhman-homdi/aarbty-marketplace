@@ -19,6 +19,14 @@ pnpm workspace monorepo using TypeScript. Contains a Food Truck Marketplace plat
 - **Routing**: Wouter
 - **State**: TanStack Query
 
+## Authentication
+
+- Real backend auth: users table in PostgreSQL, bcryptjs hashing (cost factor 12), express-session + connect-pg-simple
+- Session cookie: `sid`, HttpOnly, SameSite=Lax, 7-day expiry
+- Auth routes: `POST /api/auth/login`, `POST /api/auth/register`, `POST /api/auth/logout`, `GET /api/auth/me`
+- Seed demo users: `pnpm --filter @workspace/scripts run seed-users`
+- Demo credentials: provider@arabati.sa / 123456 — customer@arabati.sa / 123456 — admin@arabati.sa / admin123
+
 ## Platform Features
 
 - Arabic RTL interface (fully in Arabic, targeting Saudi Arabia)

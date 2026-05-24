@@ -4,3 +4,4 @@ export * from "./contracts";
 export * from "./walletTransactions";
 export * from "./manufacturingOrders";
 export * from "./manufacturerQuotes";
+export * from "./users";

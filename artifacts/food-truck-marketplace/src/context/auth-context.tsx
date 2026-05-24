@@ -1,48 +1,42 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
+import { apiMe, apiLogout, type AuthUser } from "@/lib/api";
 
 export type UserRole = "provider" | "customer" | "admin";
 
-export interface AuthUser {
-  name: string;
-  role: UserRole;
-}
-
 interface AuthContextValue {
   user: AuthUser | null;
-  login: (user: AuthUser) => void;
-  logout: () => void;
+  setUser: (u: AuthUser | null) => void;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
+  isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextValue>({
   user: null,
-  login: () => {},
-  logout: () => {},
+  setUser: () => {},
+  logout: async () => {},
   isAuthenticated: false,
+  isLoading: true,
 });
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<AuthUser | null>(() => {
-    try {
-      const stored = localStorage.getItem("arabati_user");
-      return stored ? JSON.parse(stored) : null;
-    } catch {
-      return null;
-    }
-  });
+  const [user, setUser] = useState<AuthUser | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  function login(u: AuthUser) {
-    setUser(u);
-    localStorage.setItem("arabati_user", JSON.stringify(u));
-  }
+  useEffect(() => {
+    apiMe()
+      .then(u => setUser(u))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
+  }, []);
 
-  function logout() {
+  async function logout() {
+    await apiLogout();
     setUser(null);
-    localStorage.removeItem("arabati_user");
   }
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, isAuthenticated: !!user }}>
+    <AuthContext.Provider value={{ user, setUser, logout, isAuthenticated: !!user, isLoading }}>
       {children}
     </AuthContext.Provider>
   );

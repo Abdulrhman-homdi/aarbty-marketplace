@@ -7,9 +7,11 @@ import walletRouter from "./wallet";
 import statsRouter from "./stats";
 import uploadRouter from "./upload";
 import manufacturingRouter from "./manufacturing";
+import authRouter from "./auth";
 
 const router: IRouter = Router();
 
+router.use(authRouter);
 router.use(healthRouter);
 router.use(foodTrucksRouter);
 router.use(inquiriesRouter);
