@@ -112,10 +112,9 @@ export function Footer() {
           </div>
         </div>
       </div>
-
       <div className="border-t border-white/10">
         <div className="container mx-auto px-4 py-5 flex flex-col md:flex-row items-center justify-between gap-4 text-gray-500 text-sm">
-          <p>© 2025 عربتي. جميع الحقوق محفوظة.</p>
+          <p>© 2026 عربتي. جميع الحقوق محفوظة.</p>
           <div className="flex gap-6">
             <a href="#" className="hover:text-primary transition-colors">سياسة الخصوصية</a>
             <a href="#" className="hover:text-primary transition-colors">شروط الاستخدام</a>
