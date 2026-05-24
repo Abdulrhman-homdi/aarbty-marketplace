@@ -50,8 +50,7 @@ export default function InquiryForm() {
           customerName: form.customerName,
           customerEmail: form.customerEmail,
           customerPhone: form.customerPhone || undefined,
-          message: form.message || undefined,
-          type: form.type,
+          message: form.message ? `[${form.type === "rent" ? "استئجار" : "شراء"}] ${form.message}` : undefined,
         },
       },
       {

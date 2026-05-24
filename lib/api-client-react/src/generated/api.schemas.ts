@@ -100,6 +100,13 @@ export interface UpdateAvailabilityBody {
   available: boolean;
 }
 
+export type InquiryType = (typeof InquiryType)[keyof typeof InquiryType];
+
+export const InquiryType = {
+  sale: "sale",
+  rent: "rent",
+} as const;
+
 export type InquiryStatus = (typeof InquiryStatus)[keyof typeof InquiryStatus];
 
 export const InquiryStatus = {
@@ -116,6 +123,7 @@ export interface Inquiry {
   customerEmail: string;
   customerPhone?: string;
   message?: string;
+  type?: InquiryType;
   status: InquiryStatus;
   createdAt: string;
   respondedAt?: string;
@@ -178,6 +186,10 @@ export interface Contract {
   depositAmount?: number;
   remainingAmount?: number;
   rentalDuration?: ContractRentalDuration;
+  rentalPeriodCount?: number;
+  monthlyPayment?: number;
+  startDate?: string;
+  endDate?: string;
   terms?: string;
   status: ContractStatus;
   createdAt: string;
@@ -271,7 +283,123 @@ export interface ActivityItem {
   id: number;
   type: ActivityItemType;
   description: string;
+  createdAt?: string;
+}
+
+export type ManufacturingOrderTruckType =
+  (typeof ManufacturingOrderTruckType)[keyof typeof ManufacturingOrderTruckType];
+
+export const ManufacturingOrderTruckType = {
+  food: "food",
+  beverages: "beverages",
+  custom: "custom",
+} as const;
+
+export type ManufacturingOrderStatus =
+  (typeof ManufacturingOrderStatus)[keyof typeof ManufacturingOrderStatus];
+
+export const ManufacturingOrderStatus = {
+  pending: "pending",
+  quoted: "quoted",
+  accepted: "accepted",
+  design: "design",
+  execution: "execution",
+  delivery: "delivery",
+  completed: "completed",
+} as const;
+
+export interface ManufacturingOrder {
+  id: number;
+  orderNumber: string;
+  truckType: ManufacturingOrderTruckType;
+  capacity: string;
+  materials: string;
+  hasSignage: boolean;
+  hasEquipment: boolean;
+  equipmentDetails?: string;
+  additionalDetails?: string;
+  logoUrl?: string;
+  filesUrls?: string[];
+  notes?: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  status: ManufacturingOrderStatus;
+  acceptedQuoteId?: number;
   createdAt: string;
+}
+
+export type ManufacturerQuoteStatus =
+  (typeof ManufacturerQuoteStatus)[keyof typeof ManufacturerQuoteStatus];
+
+export const ManufacturerQuoteStatus = {
+  pending: "pending",
+  accepted: "accepted",
+  rejected: "rejected",
+} as const;
+
+export interface ManufacturerQuote {
+  id: number;
+  orderId: number;
+  manufacturerName: string;
+  price: number;
+  duration: number;
+  details: string;
+  status: ManufacturerQuoteStatus;
+  createdAt: string;
+}
+
+export type ManufacturingOrderDetail = ManufacturingOrder & {
+  quotes: ManufacturerQuote[];
+};
+
+export type CreateManufacturingOrderBodyTruckType =
+  (typeof CreateManufacturingOrderBodyTruckType)[keyof typeof CreateManufacturingOrderBodyTruckType];
+
+export const CreateManufacturingOrderBodyTruckType = {
+  food: "food",
+  beverages: "beverages",
+  custom: "custom",
+} as const;
+
+export interface CreateManufacturingOrderBody {
+  truckType: CreateManufacturingOrderBodyTruckType;
+  capacity: string;
+  materials: string;
+  hasSignage?: boolean;
+  hasEquipment?: boolean;
+  equipmentDetails?: string;
+  additionalDetails?: string;
+  logoUrl?: string;
+  filesUrls?: string[];
+  notes?: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+}
+
+export interface CreateManufacturerQuoteBody {
+  manufacturerName: string;
+  price: number;
+  duration: number;
+  details: string;
+}
+
+export type UpdateManufacturingOrderStatusBodyStatus =
+  (typeof UpdateManufacturingOrderStatusBodyStatus)[keyof typeof UpdateManufacturingOrderStatusBodyStatus];
+
+export const UpdateManufacturingOrderStatusBodyStatus = {
+  pending: "pending",
+  quoted: "quoted",
+  accepted: "accepted",
+  design: "design",
+  execution: "execution",
+  delivery: "delivery",
+  completed: "completed",
+} as const;
+
+export interface UpdateManufacturingOrderStatusBody {
+  status: UpdateManufacturingOrderStatusBodyStatus;
 }
 
 export type ListFoodTrucksParams = {

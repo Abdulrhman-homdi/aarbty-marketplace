@@ -22,15 +22,21 @@ import type {
   CreateContractBody,
   CreateFoodTruckBody,
   CreateInquiryBody,
+  CreateManufacturerQuoteBody,
+  CreateManufacturingOrderBody,
   FoodTruck,
   HealthStatus,
   Inquiry,
   ListContractsParams,
   ListFoodTrucksParams,
   ListInquiriesParams,
+  ManufacturerQuote,
+  ManufacturingOrder,
+  ManufacturingOrderDetail,
   PlatformStats,
   RespondToInquiryBody,
   UpdateAvailabilityBody,
+  UpdateManufacturingOrderStatusBody,
   Wallet,
   WalletTransaction,
   WalletTransactionBody,
@@ -1576,3 +1582,524 @@ export function useGetRecentActivity<
 
   return { ...query, queryKey: queryOptions.queryKey };
 }
+
+/**
+ * @summary List all manufacturing orders
+ */
+export const getListManufacturingOrdersUrl = () => {
+  return `/api/manufacturing-orders`;
+};
+
+export const listManufacturingOrders = async (
+  options?: RequestInit,
+): Promise<ManufacturingOrder[]> => {
+  return customFetch<ManufacturingOrder[]>(getListManufacturingOrdersUrl(), {
+    ...options,
+    method: "GET",
+  });
+};
+
+export const getListManufacturingOrdersQueryKey = () => {
+  return [`/api/manufacturing-orders`] as const;
+};
+
+export const getListManufacturingOrdersQueryOptions = <
+  TData = Awaited<ReturnType<typeof listManufacturingOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listManufacturingOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getListManufacturingOrdersQueryKey();
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof listManufacturingOrders>>
+  > = ({ signal }) => listManufacturingOrders({ signal, ...requestOptions });
+
+  return { queryKey, queryFn, ...queryOptions } as UseQueryOptions<
+    Awaited<ReturnType<typeof listManufacturingOrders>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type ListManufacturingOrdersQueryResult = NonNullable<
+  Awaited<ReturnType<typeof listManufacturingOrders>>
+>;
+export type ListManufacturingOrdersQueryError = ErrorType<unknown>;
+
+/**
+ * @summary List all manufacturing orders
+ */
+
+export function useListManufacturingOrders<
+  TData = Awaited<ReturnType<typeof listManufacturingOrders>>,
+  TError = ErrorType<unknown>,
+>(options?: {
+  query?: UseQueryOptions<
+    Awaited<ReturnType<typeof listManufacturingOrders>>,
+    TError,
+    TData
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getListManufacturingOrdersQueryOptions(options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Submit a new truck manufacturing order
+ */
+export const getCreateManufacturingOrderUrl = () => {
+  return `/api/manufacturing-orders`;
+};
+
+export const createManufacturingOrder = async (
+  createManufacturingOrderBody: CreateManufacturingOrderBody,
+  options?: RequestInit,
+): Promise<ManufacturingOrder> => {
+  return customFetch<ManufacturingOrder>(getCreateManufacturingOrderUrl(), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createManufacturingOrderBody),
+  });
+};
+
+export const getCreateManufacturingOrderMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createManufacturingOrder>>,
+    TError,
+    { data: BodyType<CreateManufacturingOrderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof createManufacturingOrder>>,
+  TError,
+  { data: BodyType<CreateManufacturingOrderBody> },
+  TContext
+> => {
+  const mutationKey = ["createManufacturingOrder"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof createManufacturingOrder>>,
+    { data: BodyType<CreateManufacturingOrderBody> }
+  > = (props) => {
+    const { data } = props ?? {};
+
+    return createManufacturingOrder(data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type CreateManufacturingOrderMutationResult = NonNullable<
+  Awaited<ReturnType<typeof createManufacturingOrder>>
+>;
+export type CreateManufacturingOrderMutationBody =
+  BodyType<CreateManufacturingOrderBody>;
+export type CreateManufacturingOrderMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit a new truck manufacturing order
+ */
+export const useCreateManufacturingOrder = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof createManufacturingOrder>>,
+    TError,
+    { data: BodyType<CreateManufacturingOrderBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof createManufacturingOrder>>,
+  TError,
+  { data: BodyType<CreateManufacturingOrderBody> },
+  TContext
+> => {
+  return useMutation(getCreateManufacturingOrderMutationOptions(options));
+};
+
+/**
+ * @summary Get manufacturing order by ID
+ */
+export const getGetManufacturingOrderUrl = (id: number) => {
+  return `/api/manufacturing-orders/${id}`;
+};
+
+export const getManufacturingOrder = async (
+  id: number,
+  options?: RequestInit,
+): Promise<ManufacturingOrderDetail> => {
+  return customFetch<ManufacturingOrderDetail>(
+    getGetManufacturingOrderUrl(id),
+    {
+      ...options,
+      method: "GET",
+    },
+  );
+};
+
+export const getGetManufacturingOrderQueryKey = (id: number) => {
+  return [`/api/manufacturing-orders/${id}`] as const;
+};
+
+export const getGetManufacturingOrderQueryOptions = <
+  TData = Awaited<ReturnType<typeof getManufacturingOrder>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getManufacturingOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+) => {
+  const { query: queryOptions, request: requestOptions } = options ?? {};
+
+  const queryKey =
+    queryOptions?.queryKey ?? getGetManufacturingOrderQueryKey(id);
+
+  const queryFn: QueryFunction<
+    Awaited<ReturnType<typeof getManufacturingOrder>>
+  > = ({ signal }) => getManufacturingOrder(id, { signal, ...requestOptions });
+
+  return {
+    queryKey,
+    queryFn,
+    enabled: !!id,
+    ...queryOptions,
+  } as UseQueryOptions<
+    Awaited<ReturnType<typeof getManufacturingOrder>>,
+    TError,
+    TData
+  > & { queryKey: QueryKey };
+};
+
+export type GetManufacturingOrderQueryResult = NonNullable<
+  Awaited<ReturnType<typeof getManufacturingOrder>>
+>;
+export type GetManufacturingOrderQueryError = ErrorType<unknown>;
+
+/**
+ * @summary Get manufacturing order by ID
+ */
+
+export function useGetManufacturingOrder<
+  TData = Awaited<ReturnType<typeof getManufacturingOrder>>,
+  TError = ErrorType<unknown>,
+>(
+  id: number,
+  options?: {
+    query?: UseQueryOptions<
+      Awaited<ReturnType<typeof getManufacturingOrder>>,
+      TError,
+      TData
+    >;
+    request?: SecondParameter<typeof customFetch>;
+  },
+): UseQueryResult<TData, TError> & { queryKey: QueryKey } {
+  const queryOptions = getGetManufacturingOrderQueryOptions(id, options);
+
+  const query = useQuery(queryOptions) as UseQueryResult<TData, TError> & {
+    queryKey: QueryKey;
+  };
+
+  return { ...query, queryKey: queryOptions.queryKey };
+}
+
+/**
+ * @summary Update manufacturing order status
+ */
+export const getUpdateManufacturingOrderStatusUrl = (id: number) => {
+  return `/api/manufacturing-orders/${id}/status`;
+};
+
+export const updateManufacturingOrderStatus = async (
+  id: number,
+  updateManufacturingOrderStatusBody: UpdateManufacturingOrderStatusBody,
+  options?: RequestInit,
+): Promise<ManufacturingOrder> => {
+  return customFetch<ManufacturingOrder>(
+    getUpdateManufacturingOrderStatusUrl(id),
+    {
+      ...options,
+      method: "PUT",
+      headers: { "Content-Type": "application/json", ...options?.headers },
+      body: JSON.stringify(updateManufacturingOrderStatusBody),
+    },
+  );
+};
+
+export const getUpdateManufacturingOrderStatusMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateManufacturingOrderStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdateManufacturingOrderStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof updateManufacturingOrderStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdateManufacturingOrderStatusBody> },
+  TContext
+> => {
+  const mutationKey = ["updateManufacturingOrderStatus"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof updateManufacturingOrderStatus>>,
+    { id: number; data: BodyType<UpdateManufacturingOrderStatusBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return updateManufacturingOrderStatus(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type UpdateManufacturingOrderStatusMutationResult = NonNullable<
+  Awaited<ReturnType<typeof updateManufacturingOrderStatus>>
+>;
+export type UpdateManufacturingOrderStatusMutationBody =
+  BodyType<UpdateManufacturingOrderStatusBody>;
+export type UpdateManufacturingOrderStatusMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Update manufacturing order status
+ */
+export const useUpdateManufacturingOrderStatus = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof updateManufacturingOrderStatus>>,
+    TError,
+    { id: number; data: BodyType<UpdateManufacturingOrderStatusBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof updateManufacturingOrderStatus>>,
+  TError,
+  { id: number; data: BodyType<UpdateManufacturingOrderStatusBody> },
+  TContext
+> => {
+  return useMutation(getUpdateManufacturingOrderStatusMutationOptions(options));
+};
+
+/**
+ * @summary Submit a price quote for a manufacturing order
+ */
+export const getSubmitManufacturerQuoteUrl = (id: number) => {
+  return `/api/manufacturing-orders/${id}/quotes`;
+};
+
+export const submitManufacturerQuote = async (
+  id: number,
+  createManufacturerQuoteBody: CreateManufacturerQuoteBody,
+  options?: RequestInit,
+): Promise<ManufacturerQuote> => {
+  return customFetch<ManufacturerQuote>(getSubmitManufacturerQuoteUrl(id), {
+    ...options,
+    method: "POST",
+    headers: { "Content-Type": "application/json", ...options?.headers },
+    body: JSON.stringify(createManufacturerQuoteBody),
+  });
+};
+
+export const getSubmitManufacturerQuoteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitManufacturerQuote>>,
+    TError,
+    { id: number; data: BodyType<CreateManufacturerQuoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof submitManufacturerQuote>>,
+  TError,
+  { id: number; data: BodyType<CreateManufacturerQuoteBody> },
+  TContext
+> => {
+  const mutationKey = ["submitManufacturerQuote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof submitManufacturerQuote>>,
+    { id: number; data: BodyType<CreateManufacturerQuoteBody> }
+  > = (props) => {
+    const { id, data } = props ?? {};
+
+    return submitManufacturerQuote(id, data, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type SubmitManufacturerQuoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof submitManufacturerQuote>>
+>;
+export type SubmitManufacturerQuoteMutationBody =
+  BodyType<CreateManufacturerQuoteBody>;
+export type SubmitManufacturerQuoteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Submit a price quote for a manufacturing order
+ */
+export const useSubmitManufacturerQuote = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof submitManufacturerQuote>>,
+    TError,
+    { id: number; data: BodyType<CreateManufacturerQuoteBody> },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof submitManufacturerQuote>>,
+  TError,
+  { id: number; data: BodyType<CreateManufacturerQuoteBody> },
+  TContext
+> => {
+  return useMutation(getSubmitManufacturerQuoteMutationOptions(options));
+};
+
+/**
+ * @summary Accept a manufacturer quote
+ */
+export const getAcceptManufacturerQuoteUrl = (id: number, quoteId: number) => {
+  return `/api/manufacturing-orders/${id}/quotes/${quoteId}/accept`;
+};
+
+export const acceptManufacturerQuote = async (
+  id: number,
+  quoteId: number,
+  options?: RequestInit,
+): Promise<ManufacturingOrderDetail> => {
+  return customFetch<ManufacturingOrderDetail>(
+    getAcceptManufacturerQuoteUrl(id, quoteId),
+    {
+      ...options,
+      method: "PUT",
+    },
+  );
+};
+
+export const getAcceptManufacturerQuoteMutationOptions = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptManufacturerQuote>>,
+    TError,
+    { id: number; quoteId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationOptions<
+  Awaited<ReturnType<typeof acceptManufacturerQuote>>,
+  TError,
+  { id: number; quoteId: number },
+  TContext
+> => {
+  const mutationKey = ["acceptManufacturerQuote"];
+  const { mutation: mutationOptions, request: requestOptions } = options
+    ? options.mutation &&
+      "mutationKey" in options.mutation &&
+      options.mutation.mutationKey
+      ? options
+      : { ...options, mutation: { ...options.mutation, mutationKey } }
+    : { mutation: { mutationKey }, request: undefined };
+
+  const mutationFn: MutationFunction<
+    Awaited<ReturnType<typeof acceptManufacturerQuote>>,
+    { id: number; quoteId: number }
+  > = (props) => {
+    const { id, quoteId } = props ?? {};
+
+    return acceptManufacturerQuote(id, quoteId, requestOptions);
+  };
+
+  return { mutationFn, ...mutationOptions };
+};
+
+export type AcceptManufacturerQuoteMutationResult = NonNullable<
+  Awaited<ReturnType<typeof acceptManufacturerQuote>>
+>;
+
+export type AcceptManufacturerQuoteMutationError = ErrorType<unknown>;
+
+/**
+ * @summary Accept a manufacturer quote
+ */
+export const useAcceptManufacturerQuote = <
+  TError = ErrorType<unknown>,
+  TContext = unknown,
+>(options?: {
+  mutation?: UseMutationOptions<
+    Awaited<ReturnType<typeof acceptManufacturerQuote>>,
+    TError,
+    { id: number; quoteId: number },
+    TContext
+  >;
+  request?: SecondParameter<typeof customFetch>;
+}): UseMutationResult<
+  Awaited<ReturnType<typeof acceptManufacturerQuote>>,
+  TError,
+  { id: number; quoteId: number },
+  TContext
+> => {
+  return useMutation(getAcceptManufacturerQuoteMutationOptions(options));
+};

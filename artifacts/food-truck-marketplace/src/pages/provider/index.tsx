@@ -5,6 +5,9 @@ import {
   useListFoodTrucks, useListInquiries, useListContracts, useGetWalletBalance,
   useRespondToInquiry, useUpdateFoodTruckAvailability, useWalletDeposit, useCreateContract,
   getListFoodTrucksQueryKey, getListInquiriesQueryKey, getListContractsQueryKey, getGetWalletBalanceQueryKey,
+  useListManufacturingOrders, useSubmitManufacturerQuote, useUpdateManufacturingOrderStatus,
+  getListManufacturingOrdersQueryKey,
+  type ManufacturingOrderDetail,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/context/auth-context";
 import { Button } from "@/components/ui/button";
@@ -21,7 +24,8 @@ import { Separator } from "@/components/ui/separator";
 import {
   Truck, PlusCircle, MessageSquare, FileText, TrendingUp,
   CheckCircle2, Clock, XCircle, MapPin, Eye, ToggleLeft, ToggleRight,
-  Wallet, ArrowDownToLine, ScrollText, ChevronLeft, AlertCircle, User, Pencil
+  Wallet, ArrowDownToLine, ScrollText, ChevronLeft, AlertCircle, User, Pencil,
+  Factory, Send, ChevronDown, ChevronUp, Phone, Mail
 } from "lucide-react";
 
 export default function ProviderDashboard() {
@@ -32,14 +36,20 @@ export default function ProviderDashboard() {
   const { data: inquiries, isLoading: inqLoading } = useListInquiries({}, { query: { queryKey: getListInquiriesQueryKey() } });
   const { data: contracts, isLoading: conLoading } = useListContracts({}, { query: { queryKey: getListContractsQueryKey() } });
   const { data: wallet, isLoading: walLoading } = useGetWalletBalance({ query: { queryKey: getGetWalletBalanceQueryKey() } });
+  const { data: mfgOrders, isLoading: mfgLoading } = useListManufacturingOrders({ query: { queryKey: getListManufacturingOrdersQueryKey() } });
 
   const respondMutation = useRespondToInquiry();
   const toggleAvailMutation = useUpdateFoodTruckAvailability();
   const depositMutation = useWalletDeposit();
   const createContractMutation = useCreateContract();
+  const submitQuoteMutation = useSubmitManufacturerQuote();
+  const updateStatusMutation = useUpdateManufacturingOrderStatus();
 
   const [depositAmount, setDepositAmount] = useState("");
   const [depositDesc, setDepositDesc] = useState("");
+  const [expandedOrder, setExpandedOrder] = useState<number | null>(null);
+  const [quoteForm, setQuoteForm] = useState<Record<number, { manufacturerName: string; price: string; duration: string; details: string }>>({});
+
   const [contractForm, setContractForm] = useState({
     truckId: "",
     buyerName: "",
@@ -88,6 +98,36 @@ export default function ProviderDashboard() {
     );
   }
 
+  function handleSubmitQuote(orderId: number, e: React.FormEvent) {
+    e.preventDefault();
+    const form = quoteForm[orderId];
+    if (!form?.manufacturerName || !form?.price || !form?.duration || !form?.details) return;
+    submitQuoteMutation.mutate(
+      {
+        id: orderId,
+        data: {
+          manufacturerName: form.manufacturerName,
+          price: parseFloat(form.price),
+          duration: parseInt(form.duration),
+          details: form.details,
+        },
+      },
+      {
+        onSuccess: () => {
+          setQuoteForm(prev => { const n = { ...prev }; delete n[orderId]; return n; });
+          qc.invalidateQueries({ queryKey: getListManufacturingOrdersQueryKey() });
+        },
+      }
+    );
+  }
+
+  function handleUpdateMfgStatus(orderId: number, status: string) {
+    updateStatusMutation.mutate(
+      { id: orderId, data: { status: status as "design" | "execution" | "delivery" | "completed" } },
+      { onSuccess: () => qc.invalidateQueries({ queryKey: getListManufacturingOrdersQueryKey() }) }
+    );
+  }
+
   function handleCreateContract(e: React.FormEvent) {
     e.preventDefault();
     const truck = trucks?.find(t => t.id === parseInt(contractForm.truckId));
@@ -99,16 +139,13 @@ export default function ProviderDashboard() {
       {
         data: {
           truckId: parseInt(contractForm.truckId),
-          truckName: truck?.name,
           buyerName: contractForm.buyerName,
           ownerName: user?.name ?? "مقدم الخدمة",
           price,
-          type: contractForm.type,
+          type: contractForm.type as "sale" | "rent",
           depositAmount: deposit,
-          rentalDuration: contractForm.type === "rent" ? contractForm.rentalDuration : undefined,
-          rentalPeriodCount: contractForm.type === "rent" ? periodCount : undefined,
-          startDate: contractForm.startDate || undefined,
-          endDate: contractForm.endDate || undefined,
+          rentalDuration: contractForm.type === "rent" ? contractForm.rentalDuration as "monthly" | "yearly" : undefined,
+          terms: truck?.name ? `عقد ${contractForm.type === "sale" ? "بيع" : "إيجار"} — ${truck.name}` : undefined,
         },
       },
       {
@@ -305,13 +342,21 @@ export default function ProviderDashboard() {
 
         {/* Main Tabs */}
         <Tabs defaultValue="trucks">
-          <TabsList className="mb-6 bg-muted rounded-xl p-1 gap-1 w-full md:w-auto">
+          <TabsList className="mb-6 bg-muted rounded-xl p-1 gap-1 w-full md:w-auto flex-wrap h-auto">
             <TabsTrigger value="trucks" className="rounded-lg font-bold gap-1.5"><Truck className="w-4 h-4" />عرباتي</TabsTrigger>
             <TabsTrigger value="inquiries" className="rounded-lg font-bold gap-1.5 relative">
               <MessageSquare className="w-4 h-4" />الاستفسارات
               {pending > 0 && <span className="absolute -top-1 -right-1 w-4 h-4 bg-orange-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">{pending}</span>}
             </TabsTrigger>
             <TabsTrigger value="contracts" className="rounded-lg font-bold gap-1.5"><FileText className="w-4 h-4" />العقود</TabsTrigger>
+            <TabsTrigger value="manufacturing" className="rounded-lg font-bold gap-1.5 relative">
+              <Factory className="w-4 h-4" />طلبات التصنيع
+              {(mfgOrders?.filter(o => o.status === "pending").length ?? 0) > 0 && (
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-blue-500 text-white text-[10px] rounded-full flex items-center justify-center font-bold">
+                  {mfgOrders?.filter(o => o.status === "pending").length}
+                </span>
+              )}
+            </TabsTrigger>
             <TabsTrigger value="wallet" className="rounded-lg font-bold gap-1.5"><Wallet className="w-4 h-4" />المحفظة</TabsTrigger>
           </TabsList>
 
@@ -452,9 +497,8 @@ export default function ProviderDashboard() {
                                   setContractForm(p => ({
                                     ...p,
                                     truckId: truck ? String(truck.id) : "",
-                                    truckName: inq.truckName ?? "",
                                     buyerName: inq.customerName,
-                                    type: inq.type,
+                                    type: (inq.type ?? "sale") as "sale" | "rent",
                                   }));
                                   setContractOpen(true);
                                 }}
@@ -519,6 +563,207 @@ export default function ProviderDashboard() {
                       </CardContent>
                     </Card>
                   ))}
+            </div>
+          </TabsContent>
+
+          {/* Manufacturing Orders */}
+          <TabsContent value="manufacturing">
+            <div className="space-y-4">
+              {mfgLoading
+                ? [1, 2, 3].map(i => <Skeleton key={i} className="h-28 rounded-2xl" />)
+                : !mfgOrders?.length
+                  ? (
+                    <div className="text-center py-20 bg-card rounded-2xl border border-dashed">
+                      <Factory className="w-12 h-12 mx-auto text-muted-foreground/40 mb-3" />
+                      <p className="text-muted-foreground font-medium">لا توجد طلبات تصنيع حتى الآن</p>
+                      <p className="text-sm text-muted-foreground mt-1">ستظهر هنا طلبات العملاء للتصنيع</p>
+                    </div>
+                  )
+                  : mfgOrders.map(order => {
+                    const isExpanded = expandedOrder === order.id;
+                    const qf = quoteForm[order.id] ?? { manufacturerName: "", price: "", duration: "", details: "" };
+                    const STATUS_LABELS: Record<string, string> = {
+                      pending: "قيد الانتظار", quoted: "وردت عروض", accepted: "قبل العميل",
+                      design: "مرحلة التصميم", execution: "قيد التنفيذ", delivery: "مرحلة التسليم", completed: "مكتمل",
+                    };
+                    const NEXT_STATUSES: Record<string, { value: string; label: string } | null> = {
+                      accepted: { value: "design", label: "بدء التصميم" },
+                      design: { value: "execution", label: "بدء التنفيذ" },
+                      execution: { value: "delivery", label: "مرحلة التسليم" },
+                      delivery: { value: "completed", label: "تسليم مكتمل" },
+                      completed: null, pending: null, quoted: null,
+                    };
+                    const nextStatus = NEXT_STATUSES[order.status];
+                    return (
+                      <Card key={order.id} className={`border transition-all ${order.status === "pending" ? "border-blue-200 bg-blue-50/30" : ""}`}>
+                        <CardContent className="p-5 space-y-4">
+                          {/* Header */}
+                          <div className="flex items-start justify-between gap-3 flex-wrap">
+                            <div className="flex items-start gap-4">
+                              <div className="w-11 h-11 rounded-xl bg-primary/10 flex items-center justify-center shrink-0">
+                                <Factory className="w-5 h-5 text-primary" />
+                              </div>
+                              <div>
+                                <div className="flex items-center gap-2 flex-wrap mb-1">
+                                  <span className="font-black">{order.customerName}</span>
+                                  <Badge className="text-xs font-bold">{STATUS_LABELS[order.status] ?? order.status}</Badge>
+                                  <span className="text-xs text-muted-foreground font-mono">{order.orderNumber}</span>
+                                </div>
+                                <div className="grid grid-cols-2 sm:grid-cols-4 gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                                  <span>نوع: <strong className="text-foreground">{order.truckType === "food" ? "طعام" : order.truckType === "beverages" ? "مشروبات" : "مخصص"}</strong></span>
+                                  <span>السعة: <strong className="text-foreground">{order.capacity}</strong></span>
+                                  <span>المواد: <strong className="text-foreground">{order.materials === "steel" ? "ستيل" : order.materials === "cladding" ? "كلادينق" : order.materials}</strong></span>
+                                  <span>اللوحة: <strong className="text-foreground">{order.hasSignage ? "نعم" : "لا"}</strong></span>
+                                </div>
+                                <div className="flex items-center gap-3 mt-2 text-xs text-muted-foreground">
+                                  <span className="flex items-center gap-1"><Phone className="w-3 h-3" /><span dir="ltr">{order.customerPhone}</span></span>
+                                  {order.customerEmail && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{order.customerEmail}</span>}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex gap-2 items-center">
+                              {nextStatus && (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="text-xs gap-1.5 font-bold border-primary/40 text-primary hover:bg-primary/10"
+                                  onClick={() => handleUpdateMfgStatus(order.id, nextStatus.value)}
+                                  disabled={updateStatusMutation.isPending}
+                                >
+                                  <CheckCircle2 className="w-3.5 h-3.5" />{nextStatus.label}
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="text-xs gap-1"
+                                onClick={() => setExpandedOrder(isExpanded ? null : order.id)}
+                              >
+                                {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+                                {isExpanded ? "إخفاء" : "عرض المزيد"}
+                              </Button>
+                            </div>
+                          </div>
+
+                          {/* Expanded Content */}
+                          {isExpanded && (
+                            <div className="border-t pt-4 space-y-4">
+                              {/* Order details */}
+                              {order.additionalDetails && (
+                                <div className="p-3 bg-muted/40 rounded-xl text-sm">
+                                  <p className="text-xs font-bold text-muted-foreground mb-1">تفاصيل إضافية</p>
+                                  <p>{order.additionalDetails}</p>
+                                </div>
+                              )}
+                              {order.equipmentDetails && (
+                                <div className="p-3 bg-muted/40 rounded-xl text-sm">
+                                  <p className="text-xs font-bold text-muted-foreground mb-1">المواد التشغيلية</p>
+                                  <p>{order.equipmentDetails}</p>
+                                </div>
+                              )}
+                              {order.notes && (
+                                <div className="p-3 bg-muted/40 rounded-xl text-sm">
+                                  <p className="text-xs font-bold text-muted-foreground mb-1">ملاحظات العميل</p>
+                                  <p>{order.notes}</p>
+                                </div>
+                              )}
+
+                              {/* Files */}
+                              {(order.logoUrl || (order.filesUrls && order.filesUrls.length > 0)) && (
+                                <div className="flex flex-wrap gap-2">
+                                  {order.logoUrl && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground mb-1">الشعار</p>
+                                      <img src={order.logoUrl} alt="شعار" className="w-16 h-16 object-cover rounded-lg border" />
+                                    </div>
+                                  )}
+                                  {order.filesUrls && order.filesUrls.length > 0 && (
+                                    <div>
+                                      <p className="text-xs text-muted-foreground mb-1">ملفات التصميم</p>
+                                      <div className="flex gap-2 flex-wrap">
+                                        {order.filesUrls.map((url, i) => (
+                                          <img key={i} src={url} alt={`ملف ${i + 1}`} className="w-16 h-16 object-cover rounded-lg border" />
+                                        ))}
+                                      </div>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+
+                              {/* Existing quotes */}
+                              {(order as ManufacturingOrderDetail).quotes && (order as ManufacturingOrderDetail).quotes.length > 0 && (
+                                <div className="space-y-2">
+                                  <p className="text-xs font-bold text-muted-foreground">العروض المقدمة ({(order as ManufacturingOrderDetail).quotes.length})</p>
+                                  {(order as ManufacturingOrderDetail).quotes.map(q => (
+                                    <div key={q.id} className={`p-3 rounded-xl border text-sm flex justify-between gap-3 ${q.status === "accepted" ? "border-primary/40 bg-primary/5" : "border-muted bg-muted/20"}`}>
+                                      <div>
+                                        <p className="font-bold">{q.manufacturerName}</p>
+                                        <p className="text-muted-foreground text-xs mt-0.5">{q.details}</p>
+                                      </div>
+                                      <div className="text-left shrink-0">
+                                        <p className="font-black text-primary">{Number(q.price).toLocaleString("ar-SA")} ر</p>
+                                        <p className="text-xs text-muted-foreground">{q.duration} يوم</p>
+                                        {q.status === "accepted" && <Badge className="text-[10px] mt-1">مقبول</Badge>}
+                                      </div>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+
+                              {/* Quote form — only for pending/quoted orders */}
+                              {(order.status === "pending" || order.status === "quoted") && (
+                                <form onSubmit={(e) => handleSubmitQuote(order.id, e)} className="p-4 bg-muted/30 rounded-2xl border space-y-3">
+                                  <p className="font-bold text-sm flex items-center gap-2"><Send className="w-4 h-4 text-primary" />تقديم عرض سعر</p>
+                                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold">اسم المصنع *</Label>
+                                      <Input
+                                        placeholder="اسم شركتك أو مصنعك"
+                                        value={qf.manufacturerName}
+                                        onChange={e => setQuoteForm(prev => ({ ...prev, [order.id]: { ...qf, manufacturerName: e.target.value } }))}
+                                        required className="h-9 text-sm"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold">السعر (ريال) *</Label>
+                                      <Input
+                                        type="number" placeholder="0.00" min="1"
+                                        value={qf.price}
+                                        onChange={e => setQuoteForm(prev => ({ ...prev, [order.id]: { ...qf, price: e.target.value } }))}
+                                        required className="h-9 text-sm"
+                                      />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                      <Label className="text-xs font-bold">مدة التنفيذ (بالأيام) *</Label>
+                                      <Input
+                                        type="number" placeholder="مثال: 30" min="1"
+                                        value={qf.duration}
+                                        onChange={e => setQuoteForm(prev => ({ ...prev, [order.id]: { ...qf, duration: e.target.value } }))}
+                                        required className="h-9 text-sm"
+                                      />
+                                    </div>
+                                  </div>
+                                  <div className="space-y-1.5">
+                                    <Label className="text-xs font-bold">تفاصيل العرض *</Label>
+                                    <Textarea
+                                      rows={2} placeholder="اشرح عرضك بالتفصيل..."
+                                      value={qf.details}
+                                      onChange={e => setQuoteForm(prev => ({ ...prev, [order.id]: { ...qf, details: e.target.value } }))}
+                                      required className="text-sm"
+                                    />
+                                  </div>
+                                  <Button type="submit" size="sm" className="font-bold gap-2" disabled={submitQuoteMutation.isPending}>
+                                    {submitQuoteMutation.isPending ? <><Clock className="w-4 h-4 animate-spin" />جاري الإرسال...</> : <><Send className="w-4 h-4" />أرسل العرض</>}
+                                  </Button>
+                                </form>
+                              )}
+                            </div>
+                          )}
+                        </CardContent>
+                      </Card>
+                    );
+                  })
+              }
             </div>
           </TabsContent>
 

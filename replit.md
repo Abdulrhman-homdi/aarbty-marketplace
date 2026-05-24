@@ -43,6 +43,8 @@ pnpm workspace monorepo using TypeScript. Contains a Food Truck Marketplace plat
 - `/contracts` — Contract listing
 - `/contracts/:id` — Contract detail view
 - `/inquiry/:id` — Submit inquiry for specific truck
+- `/manufacture` — Manufacturing flow: customer submits custom truck order (type, capacity, materials, signage, equipment, logo/files upload)
+- `/manufacture/:id` — Order detail: status timeline, quotes comparison, accept quote
 
 ## Key Commands
 
@@ -59,5 +61,15 @@ pnpm workspace monorepo using TypeScript. Contains a Food Truck Marketplace plat
 - `inquiries` — customer inquiries
 - `contracts` — sale/rent contracts
 - `wallet_transactions` — payment records
+- `manufacturing_orders` — custom truck manufacturing requests (statuses: pending → quoted → accepted → design → execution → delivery → completed)
+- `manufacturer_quotes` — quotes submitted by providers/manufacturers for manufacturing orders
+
+## Manufacturing Flow (مسار التصنيع)
+
+- Customer submits order at `/manufacture` with truck specs, logo, design files, contact info → gets order number
+- Providers see all orders in their portal under "طلبات التصنيع" tab → can expand each order and submit a price quote
+- Customer views their order at `/manufacture/:id` → status timeline, compares quotes, accepts one
+- Provider portal updates order status (design → execution → delivery → completed) after quote accepted
+- Navbar link "اصنع عربتك" visible to all users
 
 See the `pnpm-workspace` skill for workspace structure, TypeScript setup, and package details.

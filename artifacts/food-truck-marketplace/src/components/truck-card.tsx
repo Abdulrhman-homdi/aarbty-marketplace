@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Users, Store, Tag } from "lucide-react";
-import type { FoodTruck } from "@workspace/api-client-react/src/generated/api.schemas";
+import type { FoodTruck } from "@workspace/api-client-react";
 
 export function TruckCard({ truck, delay = 0 }: { truck: FoodTruck; delay?: number }) {
   return (

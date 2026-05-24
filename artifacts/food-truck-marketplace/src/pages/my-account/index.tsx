@@ -244,7 +244,7 @@ export default function MyAccount() {
                           <div>
                             <div className="font-bold">{con.truckName ?? "عربة"}</div>
                             <div className="text-sm text-muted-foreground">
-                              عقد {con.type === "sale" ? "بيع" : "إيجار"} — {con.sellerName ?? "المالك"}
+                              عقد {con.type === "sale" ? "بيع" : "إيجار"} — {con.ownerName ?? "المالك"}
                             </div>
                             {con.startDate && (
                               <div className="text-xs text-muted-foreground">{con.startDate} → {con.endDate}</div>

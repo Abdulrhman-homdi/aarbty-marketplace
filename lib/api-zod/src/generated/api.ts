@@ -193,8 +193,8 @@ export const ListInquiriesResponseItem = zod.object({
   customerName: zod.string(),
   customerEmail: zod.string(),
   customerPhone: zod.string().optional(),
-  type: zod.enum(["sale", "rent"]).optional(),
   message: zod.string().optional(),
+  type: zod.enum(["sale", "rent"]).optional(),
   status: zod.enum(["pending", "confirmed", "rejected"]),
   createdAt: zod.string(),
   respondedAt: zod.string().optional(),
@@ -209,7 +209,6 @@ export const CreateInquiryBody = zod.object({
   customerName: zod.string(),
   customerEmail: zod.string(),
   customerPhone: zod.string().optional(),
-  type: zod.enum(["sale", "rent"]).optional().default("rent"),
   message: zod.string().optional(),
 });
 
@@ -232,6 +231,7 @@ export const RespondToInquiryResponse = zod.object({
   customerEmail: zod.string(),
   customerPhone: zod.string().optional(),
   message: zod.string().optional(),
+  type: zod.enum(["sale", "rent"]).optional(),
   status: zod.enum(["pending", "confirmed", "rejected"]),
   createdAt: zod.string(),
   respondedAt: zod.string().optional(),
@@ -280,9 +280,6 @@ export const CreateContractBody = zod.object({
   price: zod.number(),
   depositAmount: zod.number().optional(),
   rentalDuration: zod.enum(["monthly", "yearly"]).optional(),
-  rentalPeriodCount: zod.number().optional(),
-  startDate: zod.string().optional(),
-  endDate: zod.string().optional(),
   terms: zod.string().optional(),
 });
 
@@ -381,8 +378,231 @@ export const GetRecentActivityResponseItem = zod.object({
     "payment_made",
   ]),
   description: zod.string(),
-  createdAt: zod.string(),
+  createdAt: zod.string().optional(),
 });
 export const GetRecentActivityResponse = zod.array(
   GetRecentActivityResponseItem,
 );
+
+/**
+ * @summary List all manufacturing orders
+ */
+export const ListManufacturingOrdersResponseItem = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  truckType: zod.enum(["food", "beverages", "custom"]),
+  capacity: zod.string(),
+  materials: zod.string(),
+  hasSignage: zod.boolean(),
+  hasEquipment: zod.boolean(),
+  equipmentDetails: zod.string().optional(),
+  additionalDetails: zod.string().optional(),
+  logoUrl: zod.string().optional(),
+  filesUrls: zod.array(zod.string()).optional(),
+  notes: zod.string().optional(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  customerEmail: zod.string().optional(),
+  status: zod.enum([
+    "pending",
+    "quoted",
+    "accepted",
+    "design",
+    "execution",
+    "delivery",
+    "completed",
+  ]),
+  acceptedQuoteId: zod.number().optional(),
+  createdAt: zod.string(),
+});
+export const ListManufacturingOrdersResponse = zod.array(
+  ListManufacturingOrdersResponseItem,
+);
+
+/**
+ * @summary Submit a new truck manufacturing order
+ */
+export const CreateManufacturingOrderBody = zod.object({
+  truckType: zod.enum(["food", "beverages", "custom"]),
+  capacity: zod.string(),
+  materials: zod.string(),
+  hasSignage: zod.boolean().optional(),
+  hasEquipment: zod.boolean().optional(),
+  equipmentDetails: zod.string().optional(),
+  additionalDetails: zod.string().optional(),
+  logoUrl: zod.string().optional(),
+  filesUrls: zod.array(zod.string()).optional(),
+  notes: zod.string().optional(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  customerEmail: zod.string().optional(),
+});
+
+/**
+ * @summary Get manufacturing order by ID
+ */
+export const GetManufacturingOrderParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const GetManufacturingOrderResponse = zod
+  .object({
+    id: zod.number(),
+    orderNumber: zod.string(),
+    truckType: zod.enum(["food", "beverages", "custom"]),
+    capacity: zod.string(),
+    materials: zod.string(),
+    hasSignage: zod.boolean(),
+    hasEquipment: zod.boolean(),
+    equipmentDetails: zod.string().optional(),
+    additionalDetails: zod.string().optional(),
+    logoUrl: zod.string().optional(),
+    filesUrls: zod.array(zod.string()).optional(),
+    notes: zod.string().optional(),
+    customerName: zod.string(),
+    customerPhone: zod.string(),
+    customerEmail: zod.string().optional(),
+    status: zod.enum([
+      "pending",
+      "quoted",
+      "accepted",
+      "design",
+      "execution",
+      "delivery",
+      "completed",
+    ]),
+    acceptedQuoteId: zod.number().optional(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      quotes: zod.array(
+        zod.object({
+          id: zod.number(),
+          orderId: zod.number(),
+          manufacturerName: zod.string(),
+          price: zod.number(),
+          duration: zod.number(),
+          details: zod.string(),
+          status: zod.enum(["pending", "accepted", "rejected"]),
+          createdAt: zod.string(),
+        }),
+      ),
+    }),
+  );
+
+/**
+ * @summary Update manufacturing order status
+ */
+export const UpdateManufacturingOrderStatusParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const UpdateManufacturingOrderStatusBody = zod.object({
+  status: zod.enum([
+    "pending",
+    "quoted",
+    "accepted",
+    "design",
+    "execution",
+    "delivery",
+    "completed",
+  ]),
+});
+
+export const UpdateManufacturingOrderStatusResponse = zod.object({
+  id: zod.number(),
+  orderNumber: zod.string(),
+  truckType: zod.enum(["food", "beverages", "custom"]),
+  capacity: zod.string(),
+  materials: zod.string(),
+  hasSignage: zod.boolean(),
+  hasEquipment: zod.boolean(),
+  equipmentDetails: zod.string().optional(),
+  additionalDetails: zod.string().optional(),
+  logoUrl: zod.string().optional(),
+  filesUrls: zod.array(zod.string()).optional(),
+  notes: zod.string().optional(),
+  customerName: zod.string(),
+  customerPhone: zod.string(),
+  customerEmail: zod.string().optional(),
+  status: zod.enum([
+    "pending",
+    "quoted",
+    "accepted",
+    "design",
+    "execution",
+    "delivery",
+    "completed",
+  ]),
+  acceptedQuoteId: zod.number().optional(),
+  createdAt: zod.string(),
+});
+
+/**
+ * @summary Submit a price quote for a manufacturing order
+ */
+export const SubmitManufacturerQuoteParams = zod.object({
+  id: zod.coerce.number(),
+});
+
+export const SubmitManufacturerQuoteBody = zod.object({
+  manufacturerName: zod.string(),
+  price: zod.number(),
+  duration: zod.number(),
+  details: zod.string(),
+});
+
+/**
+ * @summary Accept a manufacturer quote
+ */
+export const AcceptManufacturerQuoteParams = zod.object({
+  id: zod.coerce.number(),
+  quoteId: zod.coerce.number(),
+});
+
+export const AcceptManufacturerQuoteResponse = zod
+  .object({
+    id: zod.number(),
+    orderNumber: zod.string(),
+    truckType: zod.enum(["food", "beverages", "custom"]),
+    capacity: zod.string(),
+    materials: zod.string(),
+    hasSignage: zod.boolean(),
+    hasEquipment: zod.boolean(),
+    equipmentDetails: zod.string().optional(),
+    additionalDetails: zod.string().optional(),
+    logoUrl: zod.string().optional(),
+    filesUrls: zod.array(zod.string()).optional(),
+    notes: zod.string().optional(),
+    customerName: zod.string(),
+    customerPhone: zod.string(),
+    customerEmail: zod.string().optional(),
+    status: zod.enum([
+      "pending",
+      "quoted",
+      "accepted",
+      "design",
+      "execution",
+      "delivery",
+      "completed",
+    ]),
+    acceptedQuoteId: zod.number().optional(),
+    createdAt: zod.string(),
+  })
+  .and(
+    zod.object({
+      quotes: zod.array(
+        zod.object({
+          id: zod.number(),
+          orderId: zod.number(),
+          manufacturerName: zod.string(),
+          price: zod.number(),
+          duration: zod.number(),
+          details: zod.string(),
+          status: zod.enum(["pending", "accepted", "rejected"]),
+          createdAt: zod.string(),
+        }),
+      ),
+    }),
+  );

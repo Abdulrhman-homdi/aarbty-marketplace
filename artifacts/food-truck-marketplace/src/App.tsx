@@ -20,6 +20,8 @@ import ProviderDashboard from "@/pages/provider/index";
 import MyAccount from "@/pages/my-account/index";
 import AdminDashboard from "@/pages/admin/index";
 import EditTruck from "@/pages/edit-truck";
+import ManufacturePage from "@/pages/manufacture/index";
+import ManufacturingOrderDetail from "@/pages/manufacture/[id]";
 import LoginPage from "@/pages/login";
 import NotFound from "@/pages/not-found";
 
@@ -60,6 +62,8 @@ function Router() {
             </ProtectedRoute>
           </Route>
           <Route path="/inquiry/:id" component={InquiryForm} />
+          <Route path="/manufacture" component={ManufacturePage} />
+          <Route path="/manufacture/:id" component={ManufacturingOrderDetail} />
           <Route path="/login" component={LoginPage} />
           <Route path="/edit-truck/:id">
             <ProtectedRoute requiredRole="provider">

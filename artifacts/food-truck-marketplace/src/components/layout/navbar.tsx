@@ -2,7 +2,7 @@ import { Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import {
   Store, Truck, Wallet, FileText, PlusCircle, Menu,
-  User, ChevronDown, LogOut, LogIn
+  User, ChevronDown, LogOut, LogIn, Factory
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import {
@@ -35,6 +35,7 @@ export function Navbar() {
   const mainLinks = [
     { href: "/", label: "الرئيسية", icon: Store },
     { href: "/trucks", label: "تصفح العربات", icon: Truck },
+    { href: "/manufacture", label: "اصنع عربتك", icon: Factory },
     { href: "/wallet", label: "المحفظة", icon: Wallet },
     { href: "/contracts", label: "العقود", icon: FileText },
   ];

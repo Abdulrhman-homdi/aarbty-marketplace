@@ -387,6 +387,131 @@ paths:
                 items:
                   $ref: "#/components/schemas/ActivityItem"
 
+  /manufacturing-orders:
+    get:
+      operationId: listManufacturingOrders
+      tags: [manufacturing]
+      summary: List all manufacturing orders
+      responses:
+        "200":
+          description: List of manufacturing orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ManufacturingOrder"
+    post:
+      operationId: createManufacturingOrder
+      tags: [manufacturing]
+      summary: Submit a new truck manufacturing order
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateManufacturingOrderBody"
+      responses:
+        "201":
+          description: Order created
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturingOrder"
+
+  /manufacturing-orders/{id}:
+    get:
+      operationId: getManufacturingOrder
+      tags: [manufacturing]
+      summary: Get manufacturing order by ID
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Manufacturing order with quotes
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturingOrderDetail"
+
+  /manufacturing-orders/{id}/status:
+    put:
+      operationId: updateManufacturingOrderStatus
+      tags: [manufacturing]
+      summary: Update manufacturing order status
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateManufacturingOrderStatusBody"
+      responses:
+        "200":
+          description: Status updated
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturingOrder"
+
+  /manufacturing-orders/{id}/quotes:
+    post:
+      operationId: submitManufacturerQuote
+      tags: [manufacturing]
+      summary: Submit a price quote for a manufacturing order
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateManufacturerQuoteBody"
+      responses:
+        "201":
+          description: Quote submitted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturerQuote"
+
+  /manufacturing-orders/{id}/quotes/{quoteId}/accept:
+    put:
+      operationId: acceptManufacturerQuote
+      tags: [manufacturing]
+      summary: Accept a manufacturer quote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: integer
+        - name: quoteId
+          in: path
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: Quote accepted
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ManufacturingOrderDetail"
+
 components:
   schemas:
     HealthStatus:
@@ -525,6 +650,9 @@ components:
           type: string
         message:
           type: string
+        type:
+          type: string
+          enum: [sale, rent]
         status:
           type: string
           enum: [pending, confirmed, rejected]
@@ -596,6 +724,14 @@ components:
         rentalDuration:
           type: string
           enum: [monthly, yearly]
+        rentalPeriodCount:
+          type: integer
+        monthlyPayment:
+          type: number
+        startDate:
+          type: string
+        endDate:
+          type: string
         terms:
           type: string
         status:
@@ -752,4 +888,167 @@ components:
         - id
         - type
         - description
+
+    ManufacturingOrder:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderNumber:
+          type: string
+        truckType:
+          type: string
+          enum: [food, beverages, custom]
+        capacity:
+          type: string
+        materials:
+          type: string
+        hasSignage:
+          type: boolean
+        hasEquipment:
+          type: boolean
+        equipmentDetails:
+          type: string
+        additionalDetails:
+          type: string
+        logoUrl:
+          type: string
+        filesUrls:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        customerEmail:
+          type: string
+        status:
+          type: string
+          enum: [pending, quoted, accepted, design, execution, delivery, completed]
+        acceptedQuoteId:
+          type: integer
+        createdAt:
+          type: string
+      required:
+        - id
+        - orderNumber
+        - truckType
+        - capacity
+        - materials
+        - hasSignage
+        - hasEquipment
+        - customerName
+        - customerPhone
+        - status
+        - createdAt
+
+    ManufacturingOrderDetail:
+      allOf:
+        - $ref: "#/components/schemas/ManufacturingOrder"
+        - type: object
+          properties:
+            quotes:
+              type: array
+              items:
+                $ref: "#/components/schemas/ManufacturerQuote"
+          required:
+            - quotes
+
+    ManufacturerQuote:
+      type: object
+      properties:
+        id:
+          type: integer
+        orderId:
+          type: integer
+        manufacturerName:
+          type: string
+        price:
+          type: number
+        duration:
+          type: integer
+        details:
+          type: string
+        status:
+          type: string
+          enum: [pending, accepted, rejected]
+        createdAt:
+          type: string
+      required:
+        - id
+        - orderId
+        - manufacturerName
+        - price
+        - duration
+        - details
+        - status
+        - createdAt
+
+    CreateManufacturingOrderBody:
+      type: object
+      properties:
+        truckType:
+          type: string
+          enum: [food, beverages, custom]
+        capacity:
+          type: string
+        materials:
+          type: string
+        hasSignage:
+          type: boolean
+        hasEquipment:
+          type: boolean
+        equipmentDetails:
+          type: string
+        additionalDetails:
+          type: string
+        logoUrl:
+          type: string
+        filesUrls:
+          type: array
+          items:
+            type: string
+        notes:
+          type: string
+        customerName:
+          type: string
+        customerPhone:
+          type: string
+        customerEmail:
+          type: string
+      required:
+        - truckType
+        - capacity
+        - materials
+        - customerName
+        - customerPhone
+
+    CreateManufacturerQuoteBody:
+      type: object
+      properties:
+        manufacturerName:
+          type: string
+        price:
+          type: number
+        duration:
+          type: integer
+        details:
+          type: string
+      required:
+        - manufacturerName
+        - price
+        - duration
+        - details
+
+    UpdateManufacturingOrderStatusBody:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [pending, quoted, accepted, design, execution, delivery, completed]
+      required:
+        - status
         - createdAt
