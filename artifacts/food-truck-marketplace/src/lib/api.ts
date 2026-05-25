@@ -1,6 +1,8 @@
 import { auth } from "./firebase";
 import { signInWithEmailAndPassword, createUserWithEmailAndPassword, signOut, updateProfile } from "firebase/auth";
 
+const API_BASE = import.meta.env.PROD ? "https://aarbty-api.onrender.com" : "";
+
 export interface AuthUser {
   id: number;
   name: string;
@@ -32,7 +34,7 @@ export async function apiRegister(data: {
   await updateProfile(cred.user, { displayName: data.name });
 
   const token = await cred.user.getIdToken();
-  const res = await fetch("/api/auth/register", {
+  const res = await fetch(`${API_BASE}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
     body: JSON.stringify(data),

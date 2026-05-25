@@ -1,7 +1,7 @@
 import { initializeApp } from "firebase/app";
 import { getAuth } from "firebase/auth";
 import { getFirestore } from "firebase/firestore";
-import { setAuthTokenGetter } from "@workspace/api-client-react";
+import { setAuthTokenGetter, setBaseUrl } from "@workspace/api-client-react";
 import { firebaseConfig } from "./firebase-config";
 
 const app = initializeApp(firebaseConfig);
@@ -17,3 +17,7 @@ setAuthTokenGetter(async () => {
     return null;
   }
 });
+
+if (import.meta.env.PROD) {
+  setBaseUrl("https://aarbty-api.onrender.com");
+}
