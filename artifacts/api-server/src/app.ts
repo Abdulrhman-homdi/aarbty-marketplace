@@ -7,7 +7,6 @@ import ConnectPgSimple from "connect-pg-simple";
 import { pool } from "@workspace/db";
 import router from "./routes";
 import { logger } from "./lib/logger";
-import { firebaseAuthMiddleware } from "./lib/firebase-auth";
 
 const PgSession = ConnectPgSimple(session);
 
@@ -52,8 +51,6 @@ app.use(
     },
   }),
 );
-
-app.use(firebaseAuthMiddleware);
 
 app.use("/api/uploads", express.static(path.join(process.cwd(), "uploads")));
 app.use("/api", router);

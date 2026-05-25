@@ -1,7 +1,5 @@
 import { createContext, useContext, useState, useEffect, type ReactNode } from "react";
-import { auth } from "@/lib/firebase";
 import { apiMe, apiLogout, type AuthUser } from "@/lib/api";
-import { onAuthStateChanged } from "firebase/auth";
 
 export type UserRole = "provider" | "customer" | "admin";
 
@@ -26,25 +24,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
-      if (firebaseUser) {
-        try {
-          const u = await apiMe();
-          setUser(u);
-        } catch {
-          setUser(null);
-        }
-      } else {
-        setUser(null);
-      }
-      setIsLoading(false);
-    });
-
-    return unsubscribe;
+    apiMe()
+      .then(u => setUser(u))
+      .catch(() => setUser(null))
+      .finally(() => setIsLoading(false));
   }, []);
 
   async function logout() {
-    await apiLogout().catch(() => {});
+    await apiLogout();
     setUser(null);
   }
 
