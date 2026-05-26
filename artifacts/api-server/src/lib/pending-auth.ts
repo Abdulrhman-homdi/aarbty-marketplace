@@ -1,31 +1,42 @@
 import crypto from "crypto";
 
-const store = new Map<string, number>();
+interface PendingAuthEntry {
+  userId: number;
+  otpKey?: string;
+}
+
+const store = new Map<string, PendingAuthEntry>();
 
 const TTL_MS = 10 * 60 * 1000;
 
 setInterval(() => {
   const now = Date.now();
   for (const [key, _] of store) {
-    // entries don't track time, so we clear stale ones on access
   }
 }, 60_000);
 
 export function createPendingAuthToken(userId: number): string {
   const token = crypto.randomBytes(32).toString("hex");
-  store.set(token, userId);
+  store.set(token, { userId });
   setTimeout(() => store.delete(token), TTL_MS);
   return token;
 }
 
-export function consumePendingAuthToken(token: string): number | null {
-  const userId = store.get(token) ?? null;
-  if (userId !== null) {
-    store.delete(token);
+export function setPendingAuthOtpKey(token: string, otpKey: string): void {
+  const entry = store.get(token);
+  if (entry) {
+    entry.otpKey = otpKey;
   }
-  return userId;
 }
 
-export function peekPendingAuthToken(token: string): number | null {
+export function consumePendingAuthToken(token: string): { userId: number; otpKey?: string } | null {
+  const entry = store.get(token) ?? null;
+  if (entry !== null) {
+    store.delete(token);
+  }
+  return entry;
+}
+
+export function peekPendingAuthToken(token: string): { userId: number; otpKey?: string } | null {
   return store.get(token) ?? null;
 }

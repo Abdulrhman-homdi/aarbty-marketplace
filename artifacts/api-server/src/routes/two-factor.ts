@@ -4,7 +4,7 @@ import { eq } from "drizzle-orm";
 import { generateOtp, verifyOtp } from "../lib/otp";
 import { sendOtpEmail } from "../lib/email";
 import { logger } from "../lib/logger";
-import { consumePendingAuthToken, peekPendingAuthToken } from "../lib/pending-auth";
+import { consumePendingAuthToken, peekPendingAuthToken, setPendingAuthOtpKey } from "../lib/pending-auth";
 
 const router = Router();
 
@@ -20,8 +20,8 @@ declare module "express-session" {
 
 router.post("/auth/2fa/send-code", async (req, res) => {
   const fromSession = req.session.pending2FAUserId ?? req.session.userId;
-  const fromToken = req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null;
-  const userId = fromSession ?? fromToken;
+  const fromTokenEntry = req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = fromSession ?? fromTokenEntry?.userId ?? null;
   if (!userId) {
     return res.status(401).json({ message: "غير مسجّل الدخول" });
   }
@@ -35,6 +35,9 @@ router.post("/auth/2fa/send-code", async (req, res) => {
 
   const { key, code } = generateOtp(userId, method);
   req.session.pending2FAKey = key;
+  if (fromTokenEntry && req.body.pendingAuthToken) {
+    setPendingAuthOtpKey(req.body.pendingAuthToken, key);
+  }
 
   if (method === "email") {
     const sent = await sendOtpEmail(user.email, code);
@@ -54,14 +57,14 @@ router.post("/auth/2fa/send-code", async (req, res) => {
 
 router.post("/auth/2fa/verify-code", async (req, res) => {
   const fromSession = req.session.pending2FAUserId ?? req.session.userId;
-  const fromToken = req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null;
-  const userId = fromSession ?? fromToken;
+  const fromTokenEntry = req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = fromSession ?? fromTokenEntry?.userId ?? null;
   if (!userId) {
     return res.status(401).json({ message: "غير مسجّل الدخول" });
   }
 
   const { code, method } = req.body as { code: string; method: "email" | "sms" };
-  const key = req.session.pending2FAKey;
+  const key = req.session.pending2FAKey ?? fromTokenEntry?.otpKey;
 
   if (!key || !verifyOtp(key, code, userId)) {
     return res.status(400).json({ message: "كود التحقق غير صحيح أو منتهي الصلاحية" });

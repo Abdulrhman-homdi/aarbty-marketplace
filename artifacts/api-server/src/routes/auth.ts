@@ -5,7 +5,7 @@ import { eq } from "drizzle-orm";
 import { generateOtp, verifyOtp } from "../lib/otp";
 import { sendOtpEmail } from "../lib/email";
 import { logger } from "../lib/logger";
-import { createPendingAuthToken, consumePendingAuthToken, peekPendingAuthToken } from "../lib/pending-auth";
+import { createPendingAuthToken, consumePendingAuthToken, peekPendingAuthToken, setPendingAuthOtpKey } from "../lib/pending-auth";
 
 const router = Router();
 
@@ -134,12 +134,13 @@ router.post("/auth/logout", (req, res) => {
 });
 
 router.post("/auth/resend-verification", async (req, res) => {
-  const userId = req.session.pendingEmailVerifyUserId || (req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null);
+  const fromTokenEntry = req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = req.session.pendingEmailVerifyUserId ?? fromTokenEntry?.userId ?? null;
   if (!userId) {
     return res.status(400).json({ message: "لا يوجد طلب تسجيل معلق" });
   }
 
-  // Rate limit - wait 30s between resends
+  // Rate limit - wait 30s between resends (session only)
   if (req.session.pendingEmailVerifyTimer && Date.now() - req.session.pendingEmailVerifyTimer < 30000) {
     return res.status(429).json({ message: "الرجاء الانتظار 30 ثانية قبل إعادة الإرسال" });
   }
@@ -152,6 +153,9 @@ router.post("/auth/resend-verification", async (req, res) => {
   const { key, code } = generateOtp(userId, "email");
   req.session.pendingEmailVerifyKey = key;
   req.session.pendingEmailVerifyTimer = Date.now();
+  if (fromTokenEntry && req.body.pendingAuthToken) {
+    setPendingAuthOtpKey(req.body.pendingAuthToken, key);
+  }
 
   const sent = await sendOtpEmail(user.email, code);
   if (!sent) {
@@ -162,7 +166,9 @@ router.post("/auth/resend-verification", async (req, res) => {
 });
 
 router.post("/auth/verify-email", async (req, res) => {
-  const userId = req.session.pendingEmailVerifyUserId || (req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null);
+  const fromSessionId = req.session.pendingEmailVerifyUserId;
+  const fromTokenEntry = req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = fromSessionId ?? fromTokenEntry?.userId ?? null;
   if (!userId) {
     return res.status(400).json({ message: "لا يوجد طلب تسجيل معلق" });
   }
@@ -172,7 +178,7 @@ router.post("/auth/verify-email", async (req, res) => {
     return res.status(400).json({ message: "كود التحقق مطلوب" });
   }
 
-  const key = req.session.pendingEmailVerifyKey;
+  const key = req.session.pendingEmailVerifyKey ?? fromTokenEntry?.otpKey;
   if (!key || !verifyOtp(key, code, userId)) {
     return res.status(400).json({ message: "كود التحقق غير صحيح أو منتهي الصلاحية" });
   }
