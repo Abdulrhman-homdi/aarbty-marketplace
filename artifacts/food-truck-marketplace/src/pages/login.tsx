@@ -251,11 +251,11 @@ export default function LoginPage() {
                       </button>
                     )}
                     {twoFactorMethods.includes("sms") && (
-                      <button type="button" onClick={() => setSelectedMethod("sms")}
-                        className={`p-4 rounded-xl border-2 text-center transition-all ${selectedMethod === "sms" ? "border-primary bg-primary/5" : "border-border"}`}>
-                        <Smartphone className="w-6 h-6 mx-auto mb-1 text-primary" />
+                      <div className="relative p-4 rounded-xl border-2 text-center border-border opacity-50 cursor-not-allowed select-none">
+                        <Smartphone className="w-6 h-6 mx-auto mb-1 text-muted-foreground" />
                         <div className="text-xs font-bold">رسالة جوال</div>
-                      </button>
+                        <span className="absolute -top-2 -left-2 bg-muted-foreground text-white text-[10px] font-bold px-1.5 py-0.5 rounded">قريباً</span>
+                      </div>
                     )}
                   </div>
 
