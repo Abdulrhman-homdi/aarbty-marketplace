@@ -19,6 +19,7 @@ export default function LoginPage() {
   const { setUser } = useAuth();
   const [, navigate] = useLocation();
 
+  const [activeTab, setActiveTab] = useState("login");
   const [showPass, setShowPass] = useState(false);
   const [showConfPass, setShowConfPass] = useState(false);
   const [error, setError] = useState("");
@@ -325,7 +326,7 @@ export default function LoginPage() {
           <p className="text-muted-foreground text-sm mt-1">منصة سوق عربات الفود ترك في المملكة</p>
         </div>
 
-        <Tabs defaultValue="login" onValueChange={() => setError("")}>
+        <Tabs value={activeTab} onValueChange={v => { setActiveTab(v); setError(""); }}>
           <TabsList className="w-full">
             <TabsTrigger value="login" className="flex-1 gap-2 font-bold"><LogIn className="w-4 h-4" />تسجيل الدخول</TabsTrigger>
             <TabsTrigger value="register" className="flex-1 gap-2 font-bold"><UserPlus className="w-4 h-4" />حساب جديد</TabsTrigger>
@@ -353,7 +354,17 @@ export default function LoginPage() {
                       </button>
                     </div>
                   </div>
-                  {error && <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{error}</p>}
+                  {error && (
+                    <>
+                      <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{error}</p>
+                      <p className="text-xs text-center text-muted-foreground">
+                        ليس لديك حساب؟{" "}
+                        <button type="button" onClick={() => setActiveTab("register")} className="text-primary font-bold hover:underline">
+                          سجّل حساب جديد
+                        </button>
+                      </p>
+                    </>
+                  )}
                   <Button type="submit" className="w-full h-11 font-bold gap-2" disabled={loading}>
                     {loading ? <span className="animate-pulse">جاري الدخول...</span> : <><LogIn className="w-4 h-4" />دخول</>}
                   </Button>
