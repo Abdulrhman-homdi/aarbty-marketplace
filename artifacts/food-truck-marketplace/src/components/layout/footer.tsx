@@ -1,28 +1,17 @@
-import { Link, useLocation } from "wouter";
+import { Link } from "wouter";
 import { Truck, Phone, Mail, MapPin, Facebook, Twitter, Instagram } from "lucide-react";
 import { useAuth } from "@/context/auth-context";
 
-function ProtectedLink({ href, label }: { href: string; label: string }) {
-  const { user } = useAuth();
-  const [, navigate] = useLocation();
-
-  function handleClick(e: React.MouseEvent) {
-    e.preventDefault();
-    if (user) {
-      navigate(href);
-    } else {
-      navigate("/login");
-    }
-  }
-
-  return (
-    <a href={href} onClick={handleClick} className="hover:text-primary transition-colors cursor-pointer">
-      {label}
-    </a>
-  );
-}
-
 export function Footer() {
+  const { user, isAuthenticated } = useAuth();
+
+  const portalLinks = [
+    ...(user?.role === "provider" ? [{ href: "/provider", label: "بوابة مقدم الخدمة" }] : []),
+    ...(user?.role === "customer" ? [{ href: "/my-account", label: "بوابة المستفيد" }] : []),
+    ...(user?.role === "admin" ? [{ href: "/admin", label: "لوحة الإدارة" }] : []),
+    ...(isAuthenticated ? [{ href: "/dashboard", label: "لوحة التحكم" }] : []),
+  ];
+
   return (
     <footer className="bg-black text-white border-t border-primary/30 mt-auto">
       <div className="container mx-auto px-4 py-14">
@@ -60,33 +49,37 @@ export function Footer() {
                 <Link href="/trucks" className="hover:text-primary transition-colors">تصفح العربات</Link>
               </li>
               <li>
-                <ProtectedLink href="/list-truck" label="أضف عربتك" />
+                <Link href="/manufacture" className="hover:text-primary transition-colors">اصنع عربتك</Link>
               </li>
-              <li>
-                <ProtectedLink href="/contracts" label="العقود الرقمية" />
-              </li>
-              <li>
-                <ProtectedLink href="/wallet" label="المحفظة" />
-              </li>
+              {isAuthenticated && (
+                <>
+                  <li>
+                    <Link href="/list-truck" className="hover:text-primary transition-colors">أضف عربتك</Link>
+                  </li>
+                  <li>
+                    <Link href="/contracts" className="hover:text-primary transition-colors">العقود الرقمية</Link>
+                  </li>
+                  <li>
+                    <Link href="/wallet" className="hover:text-primary transition-colors">المحفظة</Link>
+                  </li>
+                </>
+              )}
             </ul>
           </div>
 
           {/* Portals */}
-          <div className="space-y-4">
-            <h3 className="text-lg font-bold text-primary">بوابات المستخدمين</h3>
-            <ul className="space-y-2 text-gray-400 text-sm">
-              {[
-                { href: "/provider", label: "بوابة مقدم الخدمة" },
-                { href: "/my-account", label: "بوابة المستفيد" },
-                { href: "/admin", label: "لوحة الإدارة" },
-                { href: "/dashboard", label: "لوحة التحكم" },
-              ].map(link => (
-                <li key={link.href}>
-                  <ProtectedLink href={link.href} label={link.label} />
-                </li>
-              ))}
-            </ul>
-          </div>
+          {portalLinks.length > 0 && (
+            <div className="space-y-4">
+              <h3 className="text-lg font-bold text-primary">بوابات المستخدمين</h3>
+              <ul className="space-y-2 text-gray-400 text-sm">
+                {portalLinks.map(link => (
+                  <li key={link.href}>
+                    <Link href={link.href} className="hover:text-primary transition-colors">{link.label}</Link>
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
 
           {/* Contact */}
           <div className="space-y-4">

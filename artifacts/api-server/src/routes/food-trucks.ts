@@ -15,6 +15,7 @@ import {
   UpdateFoodTruckResponse,
   UpdateFoodTruckAvailabilityResponse,
 } from "@workspace/api-zod";
+import { requireRole } from "../middlewares/auth";
 
 const router: IRouter = Router();
 
@@ -73,7 +74,7 @@ router.get("/food-trucks", async (req, res): Promise<void> => {
   res.json(ListFoodTrucksResponse.parse(trucks.map(serializeTruck)));
 });
 
-router.post("/food-trucks", async (req, res): Promise<void> => {
+router.post("/food-trucks", requireRole("provider", "admin"), async (req, res): Promise<void> => {
   const parsed = CreateFoodTruckBody.safeParse(req.body);
   if (!parsed.success) {
     res.status(400).json({ error: parsed.error.message });
@@ -112,7 +113,7 @@ router.get("/food-trucks/:id", async (req, res): Promise<void> => {
   res.json(GetFoodTruckResponse.parse(serializeTruck(truck)));
 });
 
-router.put("/food-trucks/:id", async (req, res): Promise<void> => {
+router.put("/food-trucks/:id", requireRole("provider", "admin"), async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateFoodTruckParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -145,7 +146,7 @@ router.put("/food-trucks/:id", async (req, res): Promise<void> => {
   res.json(UpdateFoodTruckResponse.parse(serializeTruck(truck)));
 });
 
-router.delete("/food-trucks/:id", async (req, res): Promise<void> => {
+router.delete("/food-trucks/:id", requireRole("provider", "admin"), async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = DeleteFoodTruckParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {
@@ -166,7 +167,7 @@ router.delete("/food-trucks/:id", async (req, res): Promise<void> => {
   res.sendStatus(204);
 });
 
-router.patch("/food-trucks/:id/availability", async (req, res): Promise<void> => {
+router.patch("/food-trucks/:id/availability", requireRole("provider", "admin"), async (req, res): Promise<void> => {
   const raw = Array.isArray(req.params.id) ? req.params.id[0] : req.params.id;
   const params = UpdateFoodTruckAvailabilityParams.safeParse({ id: parseInt(raw, 10) });
   if (!params.success) {

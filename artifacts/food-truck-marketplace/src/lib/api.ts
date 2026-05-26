@@ -92,7 +92,7 @@ export async function apiMe(): Promise<AuthUser | null> {
   return res.json();
 }
 
-export async function apiSendOtp(method: "email" | "sms", pendingAuthToken?: string): Promise<void> {
+export async function apiSendOtp(method: "email" | "sms", pendingAuthToken?: string): Promise<{ devCode?: string }> {
   const res = await fetch(`${API_BASE}/api/auth/2fa/send-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -103,6 +103,7 @@ export async function apiSendOtp(method: "email" | "sms", pendingAuthToken?: str
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { message?: string }).message ?? "فشل إرسال كود التحقق");
   }
+  return res.json();
 }
 
 export async function apiVerifyOtp(code: string, method: "email" | "sms", pendingAuthToken?: string): Promise<AuthUser> {

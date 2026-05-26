@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, Link, useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -12,13 +12,15 @@ import {
   getListInquiriesQueryKey,
 } from "@workspace/api-client-react";
 import { useQueryClient } from "@tanstack/react-query";
-import { MessageSquare, ArrowRight, CheckCircle, Truck, ShoppingBag, Key } from "lucide-react";
+import { useAuth } from "@/context/auth-context";
+import { MessageSquare, ArrowRight, CheckCircle, Truck, ShoppingBag, Key, UserCheck } from "lucide-react";
 
 export default function InquiryForm() {
   const { id } = useParams<{ id: string }>();
   const truckId = parseInt(id, 10);
   const [, navigate] = useLocation();
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   const { data: truck } = useGetFoodTruck(truckId, {
     query: { queryKey: getGetFoodTruckQueryKey(truckId), enabled: !!truckId },
@@ -26,6 +28,7 @@ export default function InquiryForm() {
 
   const createMutation = useCreateInquiry();
   const [submitted, setSubmitted] = useState(false);
+  const [autoFilled, setAutoFilled] = useState(false);
 
   const [form, setForm] = useState({
     customerName: "",
@@ -35,8 +38,31 @@ export default function InquiryForm() {
     type: "rent" as "sale" | "rent",
   });
 
+  useEffect(() => {
+    if (user && !autoFilled && !form.customerName) {
+      setForm(prev => ({
+        ...prev,
+        customerName: user.name || prev.customerName,
+        customerEmail: user.email || prev.customerEmail,
+        customerPhone: user.phone || prev.customerPhone,
+      }));
+      setAutoFilled(true);
+    }
+  }, [user, autoFilled, form.customerName]);
+
   function handleChange(field: string, value: string) {
     setForm((prev) => ({ ...prev, [field]: value }));
+  }
+
+  function handleAutoFill() {
+    if (!user) return;
+    setForm(prev => ({
+      ...prev,
+      customerName: user.name || prev.customerName,
+      customerEmail: user.email || prev.customerEmail,
+      customerPhone: user.phone || prev.customerPhone,
+    }));
+    setAutoFilled(true);
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -150,6 +176,13 @@ export default function InquiryForm() {
                   </button>
                 </div>
               </div>
+              {user && (
+                <Button type="button" variant="outline" size="sm" onClick={handleAutoFill}
+                  className={`gap-2 mb-2 ${autoFilled ? "bg-green-50 border-green-200 text-green-700" : ""}`}>
+                  <UserCheck className="w-4 h-4" />
+                  {autoFilled ? "تم التعبئة تلقائياً" : "تعبئة بياناتي تلقائياً"}
+                </Button>
+              )}
               <div className="space-y-2">
                 <Label className="font-bold">
                   الاسم الكامل <span className="text-destructive">*</span>

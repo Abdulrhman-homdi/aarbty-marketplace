@@ -80,11 +80,16 @@ export default function LoginPage() {
     }
   }
 
+  const [devCode, setDevCode] = useState<string | undefined>(undefined);
+
   async function handleSendOtp() {
     setError("");
     setLoading(true);
     try {
-      await apiSendOtp(selectedMethod, pendingAuthToken);
+      const resp = await apiSendOtp(selectedMethod, pendingAuthToken);
+      if (resp.devCode) {
+        setDevCode(resp.devCode);
+      }
       setOtpSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -165,6 +170,7 @@ export default function LoginPage() {
     setOtpSent(false);
     setOtpCode("");
     setPendingAuthToken(undefined);
+    setDevCode(undefined);
     setError("");
   }
 
@@ -270,6 +276,12 @@ export default function LoginPage() {
                     <p className="text-sm text-muted-foreground">
                       تم إرسال كود التحقق إلى {selectedMethod === "email" ? "بريدك الإلكتروني" : "جوالك"}
                     </p>
+                    {devCode && (
+                      <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 text-center">
+                        <p className="text-xs text-amber-700 mb-1">كود التطوير (لأن الإيميل ما يشتغل من السيرفر)</p>
+                        <p className="text-2xl font-bold tracking-[8px] text-amber-900" dir="ltr">{devCode}</p>
+                      </div>
+                    )}
                   </div>
 
                   <div>

@@ -36,8 +36,10 @@ export function Navbar() {
     { href: "/", label: "الرئيسية", icon: Store },
     { href: "/trucks", label: "تصفح العربات", icon: Truck },
     { href: "/manufacture", label: "اصنع عربتك", icon: Factory },
-    { href: "/wallet", label: "المحفظة", icon: Wallet },
-    { href: "/contracts", label: "العقود", icon: FileText },
+    ...(isAuthenticated ? [
+      { href: "/wallet", label: "المحفظة", icon: Wallet },
+      { href: "/contracts", label: "العقود", icon: FileText },
+    ] : []),
   ];
 
   function handleLogout() {
