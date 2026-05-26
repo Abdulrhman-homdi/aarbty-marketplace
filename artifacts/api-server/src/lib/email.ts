@@ -1,4 +1,5 @@
 import nodemailer from "nodemailer";
+import dns from "dns";
 import { logger } from "./logger";
 
 let transporter: nodemailer.Transporter | null = null;
@@ -23,6 +24,9 @@ function getTransporter(): nodemailer.Transporter | null {
     connectionTimeout: 10_000,
     greetingTimeout: 10_000,
     socketTimeout: 10_000,
+    lookup: (hostname, opts, cb) => {
+      dns.lookup(hostname, { ...opts, family: 4 }, cb);
+    },
   });
 
   return transporter;

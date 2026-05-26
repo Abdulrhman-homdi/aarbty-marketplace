@@ -38,7 +38,7 @@ app.use(express.urlencoded({ extended: true }));
 
 app.use(
   session({
-    store: new PgSession({ pool, tableName: "user_sessions", createTableIfMissing: true }),
+    store: new PgSession({ pool, tableName: "user_sessions", createTableIfMissing: false }),
     secret: process.env.SESSION_SECRET ?? "dev-secret-change-in-production",
     resave: false,
     saveUninitialized: false,
