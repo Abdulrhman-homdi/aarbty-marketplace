@@ -7,6 +7,8 @@ import ConnectPgSimple from "connect-pg-simple";
 import { pool } from "@workspace/db";
 import router from "./routes";
 import { logger } from "./lib/logger";
+import { setDefaultResultOrder } from "dns";
+setDefaultResultOrder("ipv4first");
 
 const PgSession = ConnectPgSimple(session);
 
