@@ -40,7 +40,7 @@ export default function TrucksList() {
 
             <div className="space-y-3">
               <Label className="font-bold">نوع العربة</Label>
-              <Select value={listingType} onValueChange={setListingType}>
+              <Select value={listingType} onValueChange={(v) => setListingType(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="الكل" />
                 </SelectTrigger>
@@ -54,7 +54,7 @@ export default function TrucksList() {
 
             <div className="space-y-3">
               <Label className="font-bold">النشاط</Label>
-              <Select value={activityType} onValueChange={setActivityType}>
+              <Select value={activityType} onValueChange={(v) => setActivityType(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="الكل" />
                 </SelectTrigger>
@@ -68,7 +68,7 @@ export default function TrucksList() {
 
             <div className="space-y-3">
               <Label className="font-bold">المدينة</Label>
-              <Select value={location} onValueChange={setLocation}>
+              <Select value={location} onValueChange={(v) => setLocation(v === "all" ? "" : v)}>
                 <SelectTrigger>
                   <SelectValue placeholder="الكل" />
                 </SelectTrigger>

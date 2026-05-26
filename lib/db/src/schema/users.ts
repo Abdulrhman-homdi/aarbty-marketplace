@@ -9,6 +9,7 @@ export const usersTable = pgTable("users", {
   passwordHash: text("password_hash").notNull(),
   role: text("role").notNull().default("customer"),
   phone: text("phone"),
+  emailVerified: boolean("email_verified").notNull().default(false),
   twoFactorEmail: boolean("two_factor_email").notNull().default(false),
   twoFactorSms: boolean("two_factor_sms").notNull().default(false),
   createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),

@@ -1,13 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/context/auth-context";
-import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp, type AuthUser } from "@/lib/api";
+import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp, apiResendVerification, apiVerifyEmail, type AuthUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Truck, User, ShieldCheck, LogIn, Eye, EyeOff, UserPlus, Smartphone, Mail, ChevronRight } from "lucide-react";
+import { Truck, User, ShieldCheck, LogIn, Eye, EyeOff, UserPlus, Smartphone, Mail, ChevronRight, CheckCircle2 } from "lucide-react";
 
 const ROLE_META = {
   provider: { label: "مقدم الخدمة", icon: Truck, color: "text-primary", desc: "صاحب عربة للبيع أو التأجير" },
@@ -41,6 +41,11 @@ export default function LoginPage() {
   const [selectedMethod, setSelectedMethod] = useState<"email" | "sms">("email");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+
+  // Email verification state
+  const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
+  const [verifyCode, setVerifyCode] = useState("");
+  const [verifySent, setVerifySent] = useState(true);
 
   function handleSuccess(u: AuthUser) {
     setUser(u);
@@ -107,9 +112,43 @@ export default function LoginPage() {
     }
     setLoading(true);
     apiRegister({ name: regName, email: regEmail, password: regPass, role: regRole, phone: regPhone || undefined })
-      .then(u => handleSuccess(u))
+      .then(res => {
+        if (res.requiresEmailVerification) {
+          setNeedsEmailVerification(true);
+          setVerifySent(true);
+        } else {
+          handleSuccess(res as AuthUser);
+        }
+      })
       .catch(err => setError(err instanceof Error ? err.message : "حدث خطأ"))
       .finally(() => setLoading(false));
+  }
+
+  async function handleVerifyEmail(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const u = await apiVerifyEmail(verifyCode);
+      handleSuccess(u);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleResendVerify() {
+    setError("");
+    setLoading(true);
+    try {
+      await apiResendVerification();
+      setError("تم إعادة إرسال كود التحقق");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setLoading(false);
+    }
   }
 
   function resetLogin() {
@@ -117,6 +156,57 @@ export default function LoginPage() {
     setOtpSent(false);
     setOtpCode("");
     setError("");
+  }
+
+  // ── Email verification screen ──
+  if (needsEmailVerification) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <img src="/logo.jpeg" alt="عربتي" className="w-16 h-16 rounded-2xl mx-auto mb-3 object-cover" />
+            <h1 className="text-2xl font-black">تأكيد البريد الإلكتروني</h1>
+            <p className="text-muted-foreground text-sm mt-1">تم إنشاء حسابك بنجاح! أدخل كود التحقق المرسل إلى بريدك</p>
+          </div>
+
+          <Card className="border shadow-sm">
+            <CardContent className="pt-6 space-y-4">
+              {verifySent && (
+                <form onSubmit={handleVerifyEmail} className="space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto mb-3">
+                      <CheckCircle2 className="w-7 h-7 text-green-600" />
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      تم إرسال كود التحقق إلى بريدك الإلكتروني
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="font-bold block text-center mb-2">كود التحقق</Label>
+                    <Input type="text" inputMode="numeric" maxLength={6}
+                      placeholder="••••••" dir="ltr" className="h-14 text-center text-2xl font-bold tracking-[8px]"
+                      value={verifyCode} onChange={e => setVerifyCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required />
+                  </div>
+
+                  {error && <p className={`text-sm rounded-lg px-3 py-2 text-center ${error.includes("تم") ? "text-green-600 bg-green-50 border-green-200" : "text-red-500 bg-red-50 border-red-200"} border`}>{error}</p>}
+
+                  <Button type="submit" className="w-full h-11 font-bold gap-2" disabled={loading || verifyCode.length < 6}>
+                    {loading ? "جاري التحقق..." : <><ShieldCheck className="w-4 h-4" />تأكيد البريد</>}
+                  </Button>
+
+                  <div className="text-center">
+                    <button type="button" onClick={handleResendVerify} className="text-sm text-primary hover:underline" disabled={loading}>
+                      إعادة إرسال الكود
+                    </button>
+                  </div>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   // ── 2FA verify screen ──

@@ -450,7 +450,7 @@ export const getListFoodTrucksUrl = (params?: ListFoodTrucksParams) => {
   const normalizedParams = new URLSearchParams();
 
   Object.entries(params || {}).forEach(([key, value]) => {
-    if (value !== undefined) {
+    if (value !== undefined && value !== "") {
       normalizedParams.append(key, value === null ? "null" : value.toString());
     }
   });

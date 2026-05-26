@@ -56,12 +56,12 @@ export const HealthCheckResponse = zod.object({
  * @summary List all food trucks with optional filters
  */
 export const ListFoodTrucksQueryParams = zod.object({
-  activityType: zod.enum(["food", "beverages"]).optional(),
-  capacity: zod.enum(["one", "two", "more"]).optional(),
+  activityType: zod.enum(["food", "beverages"]).or(zod.literal("")).optional().transform(v => v === "" ? undefined : v),
+  capacity: zod.enum(["one", "two", "more"]).or(zod.literal("")).optional().transform(v => v === "" ? undefined : v),
   withEquipment: zod.coerce.boolean().optional(),
   location: zod.coerce.string().optional(),
   licensed: zod.coerce.boolean().optional(),
-  listingType: zod.enum(["sale", "rent"]).optional(),
+  listingType: zod.enum(["sale", "rent"]).or(zod.literal("")).optional().transform(v => v === "" ? undefined : v),
   minPrice: zod.coerce.number().optional(),
   maxPrice: zod.coerce.number().optional(),
 });

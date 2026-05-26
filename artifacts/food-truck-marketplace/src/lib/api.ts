@@ -11,6 +11,7 @@ export interface AuthUser {
 export interface LoginResponse {
   requiresTwoFactor?: boolean;
   methods?: ("email" | "sms")[];
+  requiresEmailVerification?: boolean;
   id?: number;
   name?: string;
   email?: string;
@@ -38,7 +39,7 @@ export async function apiRegister(data: {
   password: string;
   role?: string;
   phone?: string;
-}): Promise<AuthUser> {
+}): Promise<LoginResponse> {
   const res = await fetch(`${API_BASE}/api/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -48,6 +49,31 @@ export async function apiRegister(data: {
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
     throw new Error((err as { message?: string }).message ?? "فشل إنشاء الحساب");
+  }
+  return res.json();
+}
+
+export async function apiResendVerification(): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/resend-verification`, {
+    method: "POST",
+    credentials: "include",
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { message?: string }).message ?? "فشل إعادة الإرسال");
+  }
+}
+
+export async function apiVerifyEmail(code: string): Promise<AuthUser> {
+  const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include",
+    body: JSON.stringify({ code }),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { message?: string }).message ?? "كود التحقق غير صحيح");
   }
   return res.json();
 }
