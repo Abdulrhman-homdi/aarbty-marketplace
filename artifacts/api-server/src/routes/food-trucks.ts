@@ -26,6 +26,9 @@ function serializeTruck(t: DbTruck) {
     ...t,
     price: Number(t.price),
     images: t.images ?? [],
+    dimensions: t.dimensions ?? "",
+    ownerLogo: t.ownerLogo ?? "",
+    description: t.description ?? "",
     createdAt: t.createdAt instanceof Date ? t.createdAt.toISOString() : String(t.createdAt),
   };
 }
