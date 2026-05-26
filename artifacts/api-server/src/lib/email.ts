@@ -20,6 +20,9 @@ function getTransporter(): nodemailer.Transporter | null {
     port: Number(process.env.EMAIL_PORT ?? 587),
     secure: process.env.EMAIL_SECURE === "true",
     auth: { user, pass },
+    connectionTimeout: 10_000,
+    greetingTimeout: 10_000,
+    socketTimeout: 10_000,
   });
 
   return transporter;
@@ -53,6 +56,7 @@ export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
         </div>
       `,
     });
+    logger.info({ to }, "OTP email sent successfully");
     return true;
   } catch (err) {
     logger.error({ err, to }, "Failed to send OTP email");
