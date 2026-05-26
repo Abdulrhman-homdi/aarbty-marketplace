@@ -1,11 +1,10 @@
 import nodemailer from "nodemailer";
+import { promises as dns } from "dns";
 import { logger } from "./logger";
 
-let transporter: nodemailer.Transporter | null = null;
+let transporterPromise: Promise<nodemailer.Transporter | null> | null = null;
 
-function getTransporter(): nodemailer.Transporter | null {
-  if (transporter) return transporter;
-
+async function createTransporter(): Promise<nodemailer.Transporter | null> {
   const host = process.env.EMAIL_HOST;
   const user = process.env.EMAIL_USER;
   const pass = process.env.EMAIL_PASS;
@@ -15,8 +14,17 @@ function getTransporter(): nodemailer.Transporter | null {
     return null;
   }
 
-  transporter = nodemailer.createTransport({
-    host,
+  // Resolve hostname to IPv4 (Render doesn't support IPv6 outbound)
+  let ipAddress = host;
+  try {
+    const { address } = await dns.lookup(host, { family: 4 });
+    ipAddress = address;
+  } catch {
+    logger.warn({ host }, "DNS resolution failed, using hostname as-is");
+  }
+
+  const t = nodemailer.createTransport({
+    host: ipAddress,
     port: Number(process.env.EMAIL_PORT ?? 587),
     secure: process.env.EMAIL_SECURE === "true",
     auth: { user, pass },
@@ -25,11 +33,25 @@ function getTransporter(): nodemailer.Transporter | null {
     socketTimeout: 10_000,
   });
 
-  return transporter;
+  // Verify the connection configuration on creation
+  try {
+    await t.verify();
+    logger.info("SMTP connection verified");
+  } catch (err) {
+    logger.warn({ err }, "SMTP connection verification failed, will try on send");
+  }
+
+  return t;
+}
+
+async function getTransporter(): Promise<nodemailer.Transporter | null> {
+  if (transporterPromise) return transporterPromise;
+  transporterPromise = createTransporter();
+  return transporterPromise;
 }
 
 export async function sendOtpEmail(to: string, code: string): Promise<boolean> {
-  const t = getTransporter();
+  const t = await getTransporter();
   if (!t) {
     logger.info({ to, code }, "[email-fallback] OTP code (email not configured)");
     return true;

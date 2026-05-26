@@ -8,7 +8,7 @@ import { pool } from "@workspace/db";
 import router from "./routes";
 import { logger } from "./lib/logger";
 import { setDefaultResultOrder } from "dns";
-setDefaultResultOrder("ipv4first");
+try { setDefaultResultOrder("ipv4first"); } catch {} // Prefer IPv4 (Render lacks IPv6 outbound)
 
 const PgSession = ConnectPgSimple(session);
 
