@@ -89,7 +89,17 @@ router.post("/auth/login", async (req, res) => {
   }
 
   if (!user.emailVerified) {
-    return res.status(403).json({ message: "الرجاء تأكيد البريد الإلكتروني أولاً عبر كود التحقق المرسل لبريدك" });
+    const { key, code } = generateOtp(user.id, "email");
+    req.session.pendingEmailVerifyKey = key;
+    req.session.pendingEmailVerifyUserId = user.id;
+    req.session.pendingEmailVerifyTimer = Date.now();
+
+    const sent = await sendOtpEmail(user.email, code);
+    if (!sent) {
+      logger.info({ email: user.email, code }, "[email-verify] login OTP (email not configured)");
+    }
+
+    return res.json({ requiresEmailVerification: true });
   }
 
   // Always require email OTP on every login

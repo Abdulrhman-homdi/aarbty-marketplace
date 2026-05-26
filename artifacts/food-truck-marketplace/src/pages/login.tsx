@@ -59,6 +59,11 @@ export default function LoginPage() {
     setLoading(true);
     try {
       const res = await apiLogin(loginEmail, loginPass);
+      if (res.requiresEmailVerification) {
+        setNeedsEmailVerification(true);
+        setVerifySent(true);
+        return;
+      }
       if (res.requiresTwoFactor && res.methods) {
         setTwoFactorMethods(res.methods);
         setSelectedMethod(res.methods[0] ?? "email");
