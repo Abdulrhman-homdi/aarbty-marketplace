@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link } from "wouter";
 import { useQueryClient } from "@tanstack/react-query";
 import {
@@ -6,6 +6,7 @@ import {
   getListInquiriesQueryKey, getListContractsQueryKey, getGetWalletBalanceQueryKey,
 } from "@workspace/api-client-react";
 import { useAuth } from "@/context/auth-context";
+import { apiGet2faStatus, apiToggle2fa, apiSendOtp, apiVerifyOtp } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -17,7 +18,8 @@ import { Separator } from "@/components/ui/separator";
 import {
   MessageSquare, FileText, Wallet, TrendingDown, ArrowUpRight,
   Clock, CheckCircle2, XCircle, User, PlusCircle, ArrowDownToLine,
-  ShoppingCart, Home, Star, ChevronLeft, Search
+  ShoppingCart, Home, Star, ChevronLeft, Search,
+  Mail, Smartphone, ShieldCheck, ShieldOff, KeyRound
 } from "lucide-react";
 
 export default function MyAccount() {
@@ -29,6 +31,77 @@ export default function MyAccount() {
   const { data: wallet, isLoading: walLoading } = useGetWalletBalance({ query: { queryKey: getGetWalletBalanceQueryKey() } });
 
   const depositMutation = useWalletDeposit();
+  const [twoFactorStatus, setTwoFactorStatus] = useState<{ email: boolean; sms: boolean; phone: string | null } | null>(null);
+  const [togglingEmail, setTogglingEmail] = useState(false);
+  const [togglingSms, setTogglingSms] = useState(false);
+  const [twoFactorError, setTwoFactorError] = useState("");
+  const [twoFactorSuccess, setTwoFactorSuccess] = useState("");
+
+  // 2FA verify inline
+  const [verifyMethod, setVerifyMethod] = useState<"email" | "sms" | null>(null);
+  const [verifyOtp, setVerifyOtp] = useState("");
+  const [verifySent, setVerifySent] = useState(false);
+  const [verifyLoading, setVerifyLoading] = useState(false);
+
+  useEffect(() => {
+    apiGet2faStatus().then(setTwoFactorStatus).catch(() => {});
+  }, []);
+
+  async function handleToggle2fa(method: "email" | "sms", enabled: boolean) {
+    setTwoFactorError("");
+    setTwoFactorSuccess("");
+    if (enabled) {
+      setVerifyMethod(method);
+      return;
+    }
+    if (method === "email") setTogglingEmail(true);
+    else setTogglingSms(true);
+    try {
+      await apiToggle2fa(method, false);
+      setTwoFactorStatus(prev => prev ? { ...prev, [method]: false } : prev);
+      setTwoFactorSuccess(`تم إلغاء التحقق عبر ${method === "email" ? "البريد" : "الجوال"}`);
+    } catch (err) {
+      setTwoFactorError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setTogglingEmail(false);
+      setTogglingSms(false);
+    }
+  }
+
+  async function handleVerifySend() {
+    if (!verifyMethod) return;
+    setTwoFactorError("");
+    setVerifyLoading(true);
+    try {
+      await apiSendOtp(verifyMethod);
+      setVerifySent(true);
+    } catch (err) {
+      setTwoFactorError(err instanceof Error ? err.message : "فشل الإرسال");
+    } finally {
+      setVerifyLoading(false);
+    }
+  }
+
+  async function handleVerifyConfirm(e: React.FormEvent) {
+    e.preventDefault();
+    if (!verifyMethod) return;
+    setTwoFactorError("");
+    setVerifyLoading(true);
+    try {
+      await apiVerifyOtp(verifyOtp, verifyMethod);
+      await apiToggle2fa(verifyMethod, true);
+      setTwoFactorStatus(prev => prev ? { ...prev, [verifyMethod!]: true } : prev);
+      setTwoFactorSuccess(`تم تفعيل التحقق الثنائي عبر ${verifyMethod === "email" ? "البريد الإلكتروني" : "رسائل الجوال"}`);
+      setVerifyMethod(null);
+      setVerifySent(false);
+      setVerifyOtp("");
+    } catch (err) {
+      setTwoFactorError(err instanceof Error ? err.message : "كود غير صحيح");
+    } finally {
+      setVerifyLoading(false);
+    }
+  }
+
   const [depositAmount, setDepositAmount] = useState("");
   const [depositDesc, setDepositDesc] = useState("");
   const [depositSuccess, setDepositSuccess] = useState(false);
@@ -377,13 +450,13 @@ export default function MyAccount() {
                     </div>
                     <div>
                       <div className="text-2xl font-black">{user?.name}</div>
-                      <Badge className="mt-1">مستفيد</Badge>
+                      <Badge className="mt-1">{user?.role === "provider" ? "مقدم خدمة" : user?.role === "admin" ? "مدير" : "مستفيد"}</Badge>
                     </div>
                   </div>
                   <Separator className="mb-6" />
                   <div className="space-y-4 text-sm">
                     {[
-                      { label: "نوع الحساب", value: "مستفيد / عميل" },
+                      { label: "نوع الحساب", value: user?.role === "provider" ? "مقدم خدمة" : user?.role === "admin" ? "مدير" : "مستفيد" },
                       { label: "الاستفسارات", value: `${inquiries?.length ?? 0} استفسار` },
                       { label: "العقود", value: `${contracts?.length ?? 0} عقد` },
                       { label: "رصيد المحفظة", value: `${(wallet?.balance ?? 0).toLocaleString("ar-SA")} ريال` },
@@ -401,6 +474,85 @@ export default function MyAccount() {
                   <Star className="w-8 h-8 mx-auto mb-2 text-primary" />
                   <p className="font-medium">برنامج المكافآت قريباً</p>
                   <p className="text-xs mt-1">اكسب نقاط مع كل عملية شراء أو استئجار</p>
+                </CardContent>
+              </Card>
+
+              {/* ─── 2FA Settings ─── */}
+              <Card className="border">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-3 mb-4">
+                    <ShieldCheck className="w-5 h-5 text-primary" />
+                    <h3 className="font-bold">التحقق الثنائي (2FA)</h3>
+                  </div>
+
+                  {twoFactorSuccess && (
+                    <div className="bg-green-50 border border-green-200 text-green-700 text-sm rounded-lg px-3 py-2 mb-3 flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4" />
+                      {twoFactorSuccess}
+                    </div>
+                  )}
+                  {twoFactorError && (
+                    <div className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 mb-3 text-center">
+                      {twoFactorError}
+                    </div>
+                  )}
+
+                  {/* Verify inline */}
+                  {verifyMethod && (
+                    <div className="bg-muted rounded-xl p-4 mb-4 space-y-3">
+                      <div className="flex items-center gap-2 text-sm font-bold">
+                        {verifyMethod === "email" ? <Mail className="w-4 h-4" /> : <Smartphone className="w-4 h-4" />}
+                        {verifyMethod === "email" ? "تفعيل عبر البريد الإلكتروني" : "تفعيل عبر الجوال"}
+                      </div>
+                      {!verifySent ? (
+                        <Button onClick={handleVerifySend} disabled={verifyLoading} className="w-full gap-2" size="sm">
+                          {verifyLoading ? "جاري الإرسال..." : "إرسال كود التحقق"}
+                        </Button>
+                      ) : (
+                        <form onSubmit={handleVerifyConfirm} className="space-y-2">
+                          <Input type="text" inputMode="numeric" placeholder="أدخل الكود" maxLength={6}
+                            className="h-10 text-center tracking-[6px]" dir="ltr"
+                            value={verifyOtp} onChange={e => setVerifyOtp(e.target.value.replace(/\D/g, "").slice(0, 6))} />
+                          <Button type="submit" disabled={verifyLoading || verifyOtp.length < 6} className="w-full gap-2" size="sm">
+                            {verifyLoading ? "جاري التحقق..." : "تأكيد"}
+                          </Button>
+                          <button type="button" onClick={handleVerifySend} className="text-xs text-primary w-full text-center">
+                            إعادة الإرسال
+                          </button>
+                        </form>
+                      )}
+                      <button onClick={() => { setVerifyMethod(null); setVerifySent(false); setVerifyOtp(""); }}
+                        className="text-xs text-muted-foreground w-full text-center">إلغاء</button>
+                    </div>
+                  )}
+
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Mail className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">عبر البريد الإلكتروني</span>
+                        <span className="text-xs text-muted-foreground">({user?.email})</span>
+                      </div>
+                      <Button variant={twoFactorStatus?.email ? "default" : "outline"} size="sm"
+                        onClick={() => handleToggle2fa("email", !twoFactorStatus?.email)}
+                        disabled={togglingEmail} className="h-8 text-xs gap-1 min-w-[90px]">
+                        {togglingEmail ? "..." : twoFactorStatus?.email ? <><ShieldCheck className="w-3 h-3" />مفعل</> : <><ShieldOff className="w-3 h-3" />غير مفعل</>}
+                      </Button>
+                    </div>
+                    <Separator />
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-2">
+                        <Smartphone className="w-4 h-4 text-muted-foreground" />
+                        <span className="text-sm">عبر رسائل الجوال</span>
+                        <span className="text-xs text-muted-foreground">{user?.phone ? `(${user.phone})` : "(غير مسجل)"}</span>
+                      </div>
+                      <Button variant={twoFactorStatus?.sms ? "default" : "outline"} size="sm"
+                        onClick={() => handleToggle2fa("sms", !twoFactorStatus?.sms)}
+                        disabled={togglingSms || !user?.phone} className="h-8 text-xs gap-1 min-w-[90px]">
+                        {togglingSms ? "..." : twoFactorStatus?.sms ? <><ShieldCheck className="w-3 h-3" />مفعل</> : <><ShieldOff className="w-3 h-3" />غير مفعل</>}
+                      </Button>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </div>

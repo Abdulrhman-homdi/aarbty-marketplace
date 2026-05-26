@@ -1,14 +1,13 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { useAuth } from "@/context/auth-context";
-import { apiLogin, apiRegister, type AuthUser } from "@/lib/api";
+import { apiLogin, apiRegister, apiSendOtp, apiVerifyOtp, type AuthUser } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Truck, User, ShieldCheck, LogIn, Eye, EyeOff, UserPlus } from "lucide-react";
+import { Truck, User, ShieldCheck, LogIn, Eye, EyeOff, UserPlus, Smartphone, Mail, ChevronRight } from "lucide-react";
 
 const ROLE_META = {
   provider: { label: "مقدم الخدمة", icon: Truck, color: "text-primary", desc: "صاحب عربة للبيع أو التأجير" },
@@ -37,6 +36,12 @@ export default function LoginPage() {
   const [regRole, setRegRole] = useState<"provider" | "customer">("customer");
   const [regPhone, setRegPhone] = useState("");
 
+  // 2FA state
+  const [twoFactorMethods, setTwoFactorMethods] = useState<("email" | "sms")[]>([]);
+  const [selectedMethod, setSelectedMethod] = useState<"email" | "sms">("email");
+  const [otpCode, setOtpCode] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
+
   function handleSuccess(u: AuthUser) {
     setUser(u);
     const dest = u.role === "provider" ? "/provider" : u.role === "admin" ? "/admin" : "/my-account";
@@ -48,7 +53,39 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const u = await apiLogin(loginEmail, loginPass);
+      const res = await apiLogin(loginEmail, loginPass);
+      if (res.requiresTwoFactor && res.methods) {
+        setTwoFactorMethods(res.methods);
+        setSelectedMethod(res.methods[0] ?? "email");
+        return;
+      }
+      handleSuccess(res as AuthUser);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleSendOtp() {
+    setError("");
+    setLoading(true);
+    try {
+      await apiSendOtp(selectedMethod);
+      setOtpSent(true);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "حدث خطأ");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  async function handleVerifyOtp(e: React.FormEvent) {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      const u = await apiVerifyOtp(otpCode, selectedMethod);
       handleSuccess(u);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -57,7 +94,7 @@ export default function LoginPage() {
     }
   }
 
-  async function handleRegister(e: React.FormEvent) {
+  function handleRegister(e: React.FormEvent) {
     e.preventDefault();
     setError("");
     if (regPass !== regConfPass) {
@@ -69,14 +106,101 @@ export default function LoginPage() {
       return;
     }
     setLoading(true);
-    try {
-      const u = await apiRegister({ name: regName, email: regEmail, password: regPass, role: regRole, phone: regPhone || undefined });
-      handleSuccess(u);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "حدث خطأ");
-    } finally {
-      setLoading(false);
-    }
+    apiRegister({ name: regName, email: regEmail, password: regPass, role: regRole, phone: regPhone || undefined })
+      .then(u => handleSuccess(u))
+      .catch(err => setError(err instanceof Error ? err.message : "حدث خطأ"))
+      .finally(() => setLoading(false));
+  }
+
+  function resetLogin() {
+    setTwoFactorMethods([]);
+    setOtpSent(false);
+    setOtpCode("");
+    setError("");
+  }
+
+  // ── 2FA verify screen ──
+  if (twoFactorMethods.length > 0) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center p-4" dir="rtl">
+        <div className="w-full max-w-md space-y-6">
+          <div className="text-center">
+            <img src="/logo.jpeg" alt="عربتي" className="w-16 h-16 rounded-2xl mx-auto mb-3 object-cover" />
+            <h1 className="text-2xl font-black">التحقق الثنائي</h1>
+            <p className="text-muted-foreground text-sm mt-1">أدخل كود التحقق المرسل إليك</p>
+          </div>
+
+          <Card className="border shadow-sm">
+            <CardContent className="pt-6 space-y-4">
+              {!otpSent ? (
+                <>
+                  <Label className="font-bold block mb-2">اختر طريقة التحقق</Label>
+                  <div className="grid grid-cols-2 gap-3">
+                    {twoFactorMethods.includes("email") && (
+                      <button type="button" onClick={() => setSelectedMethod("email")}
+                        className={`p-4 rounded-xl border-2 text-center transition-all ${selectedMethod === "email" ? "border-primary bg-primary/5" : "border-border"}`}>
+                        <Mail className="w-6 h-6 mx-auto mb-1 text-primary" />
+                        <div className="text-xs font-bold">البريد الإلكتروني</div>
+                      </button>
+                    )}
+                    {twoFactorMethods.includes("sms") && (
+                      <button type="button" onClick={() => setSelectedMethod("sms")}
+                        className={`p-4 rounded-xl border-2 text-center transition-all ${selectedMethod === "sms" ? "border-primary bg-primary/5" : "border-border"}`}>
+                        <Smartphone className="w-6 h-6 mx-auto mb-1 text-primary" />
+                        <div className="text-xs font-bold">رسالة جوال</div>
+                      </button>
+                    )}
+                  </div>
+
+                  {error && <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{error}</p>}
+
+                  <Button onClick={handleSendOtp} className="w-full h-11 font-bold gap-2" disabled={loading}>
+                    {loading ? "جاري الإرسال..." : <><Mail className="w-4 h-4" />إرسال كود التحقق</>}
+                  </Button>
+                  <Button variant="ghost" onClick={resetLogin} className="w-full gap-1 text-sm">
+                    <ChevronRight className="w-3 h-3" />العودة لتسجيل الدخول
+                  </Button>
+                </>
+              ) : (
+                <form onSubmit={handleVerifyOtp} className="space-y-4">
+                  <div className="text-center">
+                    <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mx-auto mb-3">
+                      {selectedMethod === "email" ? <Mail className="w-7 h-7 text-primary" /> : <Smartphone className="w-7 h-7 text-primary" />}
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      تم إرسال كود التحقق إلى {selectedMethod === "email" ? "بريدك الإلكتروني" : "جوالك"}
+                    </p>
+                  </div>
+
+                  <div>
+                    <Label className="font-bold block text-center mb-2">كود التحقق</Label>
+                    <Input type="text" inputMode="numeric" maxLength={6}
+                      placeholder="••••••" dir="ltr" className="h-14 text-center text-2xl font-bold tracking-[8px]"
+                      value={otpCode} onChange={e => setOtpCode(e.target.value.replace(/\D/g, "").slice(0, 6))} required />
+                  </div>
+
+                  {error && <p className="text-sm text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2 text-center">{error}</p>}
+
+                  <Button type="submit" className="w-full h-11 font-bold gap-2" disabled={loading || otpCode.length < 6}>
+                    {loading ? "جاري التحقق..." : <><ShieldCheck className="w-4 h-4" />تحقق</>}
+                  </Button>
+
+                  <div className="text-center">
+                    <button type="button" onClick={handleSendOtp} className="text-sm text-primary hover:underline">
+                      إعادة إرسال الكود
+                    </button>
+                  </div>
+
+                  <Button variant="ghost" type="button" onClick={resetLogin} className="w-full gap-1 text-sm">
+                    <ChevronRight className="w-3 h-3" />العودة لتسجيل الدخول
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+    );
   }
 
   return (

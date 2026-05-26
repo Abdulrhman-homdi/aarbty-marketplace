@@ -8,10 +8,12 @@ import statsRouter from "./stats";
 import uploadRouter from "./upload";
 import manufacturingRouter from "./manufacturing";
 import authRouter from "./auth";
+import twoFactorRouter from "./two-factor";
 
 const router: IRouter = Router();
 
 router.use(authRouter);
+router.use(twoFactorRouter);
 router.use(healthRouter);
 router.use(foodTrucksRouter);
 router.use(inquiriesRouter);

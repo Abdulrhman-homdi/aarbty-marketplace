@@ -11,6 +11,8 @@ declare module "express-session" {
     userRole: string;
     userName: string;
     userEmail: string;
+    pending2FAUserId?: number;
+    pending2FAKey?: string;
   }
 }
 
@@ -77,6 +79,14 @@ router.post("/auth/login", async (req, res) => {
   const valid = await bcrypt.compare(password, user.passwordHash);
   if (!valid) {
     return res.status(401).json({ message: "البريد الإلكتروني أو كلمة المرور غير صحيحة" });
+  }
+
+  if (user.twoFactorEmail || user.twoFactorSms) {
+    req.session.pending2FAUserId = user.id;
+    const methods: ("email" | "sms")[] = [];
+    if (user.twoFactorEmail) methods.push("email");
+    if (user.twoFactorSms) methods.push("sms");
+    return res.json({ requiresTwoFactor: true, methods });
   }
 
   req.session.userId = user.id;
