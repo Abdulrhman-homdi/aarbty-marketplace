@@ -12,6 +12,7 @@ export interface LoginResponse {
   requiresTwoFactor?: boolean;
   methods?: ("email" | "sms")[];
   requiresEmailVerification?: boolean;
+  pendingAuthToken?: string;
   id?: number;
   name?: string;
   email?: string;
@@ -53,10 +54,12 @@ export async function apiRegister(data: {
   return res.json();
 }
 
-export async function apiResendVerification(): Promise<void> {
+export async function apiResendVerification(pendingAuthToken?: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/auth/resend-verification`, {
     method: "POST",
+    headers: { "Content-Type": "application/json" },
     credentials: "include",
+    body: JSON.stringify({ ...(pendingAuthToken ? { pendingAuthToken } : {}) }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -64,12 +67,12 @@ export async function apiResendVerification(): Promise<void> {
   }
 }
 
-export async function apiVerifyEmail(code: string): Promise<AuthUser> {
+export async function apiVerifyEmail(code: string, pendingAuthToken?: string): Promise<AuthUser> {
   const res = await fetch(`${API_BASE}/api/auth/verify-email`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ code }),
+    body: JSON.stringify({ code, ...(pendingAuthToken ? { pendingAuthToken } : {}) }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -89,12 +92,12 @@ export async function apiMe(): Promise<AuthUser | null> {
   return res.json();
 }
 
-export async function apiSendOtp(method: "email" | "sms"): Promise<void> {
+export async function apiSendOtp(method: "email" | "sms", pendingAuthToken?: string): Promise<void> {
   const res = await fetch(`${API_BASE}/api/auth/2fa/send-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ method }),
+    body: JSON.stringify({ method, ...(pendingAuthToken ? { pendingAuthToken } : {}) }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));
@@ -102,12 +105,12 @@ export async function apiSendOtp(method: "email" | "sms"): Promise<void> {
   }
 }
 
-export async function apiVerifyOtp(code: string, method: "email" | "sms"): Promise<AuthUser> {
+export async function apiVerifyOtp(code: string, method: "email" | "sms", pendingAuthToken?: string): Promise<AuthUser> {
   const res = await fetch(`${API_BASE}/api/auth/2fa/verify-code`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     credentials: "include",
-    body: JSON.stringify({ code, method }),
+    body: JSON.stringify({ code, method, ...(pendingAuthToken ? { pendingAuthToken } : {}) }),
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({}));

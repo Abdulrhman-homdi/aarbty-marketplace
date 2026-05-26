@@ -41,6 +41,7 @@ export default function LoginPage() {
   const [selectedMethod, setSelectedMethod] = useState<"email" | "sms">("email");
   const [otpCode, setOtpCode] = useState("");
   const [otpSent, setOtpSent] = useState(false);
+  const [pendingAuthToken, setPendingAuthToken] = useState<string | undefined>(undefined);
 
   // Email verification state
   const [needsEmailVerification, setNeedsEmailVerification] = useState(false);
@@ -62,11 +63,13 @@ export default function LoginPage() {
       if (res.requiresEmailVerification) {
         setNeedsEmailVerification(true);
         setVerifySent(true);
+        setPendingAuthToken(res.pendingAuthToken);
         return;
       }
       if (res.requiresTwoFactor && res.methods) {
         setTwoFactorMethods(res.methods);
         setSelectedMethod(res.methods[0] ?? "email");
+        setPendingAuthToken(res.pendingAuthToken);
         return;
       }
       handleSuccess(res as AuthUser);
@@ -81,7 +84,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await apiSendOtp(selectedMethod);
+      await apiSendOtp(selectedMethod, pendingAuthToken);
       setOtpSent(true);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -95,7 +98,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const u = await apiVerifyOtp(otpCode, selectedMethod);
+      const u = await apiVerifyOtp(otpCode, selectedMethod, pendingAuthToken);
       handleSuccess(u);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -121,6 +124,7 @@ export default function LoginPage() {
         if (res.requiresEmailVerification) {
           setNeedsEmailVerification(true);
           setVerifySent(true);
+          setPendingAuthToken(res.pendingAuthToken);
         } else {
           handleSuccess(res as AuthUser);
         }
@@ -134,7 +138,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      const u = await apiVerifyEmail(verifyCode);
+      const u = await apiVerifyEmail(verifyCode, pendingAuthToken);
       handleSuccess(u);
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -147,7 +151,7 @@ export default function LoginPage() {
     setError("");
     setLoading(true);
     try {
-      await apiResendVerification();
+      await apiResendVerification(pendingAuthToken);
       setError("تم إعادة إرسال كود التحقق");
     } catch (err) {
       setError(err instanceof Error ? err.message : "حدث خطأ");
@@ -160,6 +164,7 @@ export default function LoginPage() {
     setTwoFactorMethods([]);
     setOtpSent(false);
     setOtpCode("");
+    setPendingAuthToken(undefined);
     setError("");
   }
 

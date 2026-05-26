@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm";
 import { generateOtp, verifyOtp } from "../lib/otp";
 import { sendOtpEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { createPendingAuthToken, consumePendingAuthToken, peekPendingAuthToken } from "../lib/pending-auth";
 
 const router = Router();
 
@@ -67,7 +68,8 @@ router.post("/auth/register", async (req, res) => {
     logger.info({ email: user.email, code }, "[email-verify] OTP (email not configured)");
   }
 
-  return res.status(201).json({ requiresEmailVerification: true });
+  const pendingAuthToken = createPendingAuthToken(user.id);
+  return res.status(201).json({ requiresEmailVerification: true, pendingAuthToken });
 });
 
 router.post("/auth/login", async (req, res) => {
@@ -99,14 +101,16 @@ router.post("/auth/login", async (req, res) => {
       logger.info({ email: user.email, code }, "[email-verify] login OTP (email not configured)");
     }
 
-    return res.json({ requiresEmailVerification: true });
+    const pendingAuthToken = createPendingAuthToken(user.id);
+    return res.json({ requiresEmailVerification: true, pendingAuthToken });
   }
 
   // Always require email OTP on every login
   req.session.pending2FAUserId = user.id;
   const methods: ("email" | "sms")[] = ["email"];
   if (user.phone) methods.push("sms");
-  return res.json({ requiresTwoFactor: true, methods });
+  const pendingAuthToken = createPendingAuthToken(user.id);
+  return res.json({ requiresTwoFactor: true, methods, pendingAuthToken });
 
   req.session.userId = user.id;
   req.session.userRole = user.role;
@@ -130,7 +134,7 @@ router.post("/auth/logout", (req, res) => {
 });
 
 router.post("/auth/resend-verification", async (req, res) => {
-  const userId = req.session.pendingEmailVerifyUserId;
+  const userId = req.session.pendingEmailVerifyUserId || (req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null);
   if (!userId) {
     return res.status(400).json({ message: "لا يوجد طلب تسجيل معلق" });
   }
@@ -154,11 +158,11 @@ router.post("/auth/resend-verification", async (req, res) => {
     logger.info({ email: user.email, code }, "[email-verify] resend OTP (email not configured)");
   }
 
-  res.json({ message: "تم إرسال كود التحقق" });
+  return res.json({ message: "تم إرسال كود التحقق" });
 });
 
 router.post("/auth/verify-email", async (req, res) => {
-  const userId = req.session.pendingEmailVerifyUserId;
+  const userId = req.session.pendingEmailVerifyUserId || (req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null);
   if (!userId) {
     return res.status(400).json({ message: "لا يوجد طلب تسجيل معلق" });
   }

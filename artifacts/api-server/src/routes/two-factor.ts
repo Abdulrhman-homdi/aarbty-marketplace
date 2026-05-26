@@ -4,6 +4,7 @@ import { eq } from "drizzle-orm";
 import { generateOtp, verifyOtp } from "../lib/otp";
 import { sendOtpEmail } from "../lib/email";
 import { logger } from "../lib/logger";
+import { consumePendingAuthToken, peekPendingAuthToken } from "../lib/pending-auth";
 
 const router = Router();
 
@@ -18,7 +19,9 @@ declare module "express-session" {
 }
 
 router.post("/auth/2fa/send-code", async (req, res) => {
-  const userId = req.session.pending2FAUserId ?? req.session.userId;
+  const fromSession = req.session.pending2FAUserId ?? req.session.userId;
+  const fromToken = req.body.pendingAuthToken ? peekPendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = fromSession ?? fromToken;
   if (!userId) {
     return res.status(401).json({ message: "غير مسجّل الدخول" });
   }
@@ -46,11 +49,13 @@ router.post("/auth/2fa/send-code", async (req, res) => {
     logger.info({ phone: user.phone, code }, "[sms-fallback] OTP code (SMS not configured)");
   }
 
-  res.json({ message: "تم إرسال كود التحقق" });
+  return res.json({ message: "تم إرسال كود التحقق" });
 });
 
 router.post("/auth/2fa/verify-code", async (req, res) => {
-  const userId = req.session.pending2FAUserId ?? req.session.userId;
+  const fromSession = req.session.pending2FAUserId ?? req.session.userId;
+  const fromToken = req.body.pendingAuthToken ? consumePendingAuthToken(req.body.pendingAuthToken) : null;
+  const userId = fromSession ?? fromToken;
   if (!userId) {
     return res.status(401).json({ message: "غير مسجّل الدخول" });
   }
@@ -62,29 +67,24 @@ router.post("/auth/2fa/verify-code", async (req, res) => {
     return res.status(400).json({ message: "كود التحقق غير صحيح أو منتهي الصلاحية" });
   }
 
-  if (req.session.pending2FAUserId) {
-    const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
-    if (!user) {
-      return res.status(404).json({ message: "المستخدم غير موجود" });
-    }
-    req.session.userId = user.id;
-    req.session.userRole = user.role;
-    req.session.userName = user.name;
-    req.session.userEmail = user.email;
-    delete req.session.pending2FAUserId;
-    delete req.session.pending2FAKey;
-
-    return res.json({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: user.phone,
-    });
+  const [user] = await db.select().from(usersTable).where(eq(usersTable.id, userId)).limit(1);
+  if (!user) {
+    return res.status(404).json({ message: "المستخدم غير موجود" });
   }
-
+  req.session.userId = user.id;
+  req.session.userRole = user.role;
+  req.session.userName = user.name;
+  req.session.userEmail = user.email;
+  delete req.session.pending2FAUserId;
   delete req.session.pending2FAKey;
-  res.json({ message: "تم التحقق بنجاح" });
+
+  return res.json({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    role: user.role,
+    phone: user.phone,
+  });
 });
 
 router.get("/auth/2fa/status", async (req, res) => {
@@ -97,7 +97,7 @@ router.get("/auth/2fa/status", async (req, res) => {
     return res.status(404).json({ message: "المستخدم غير موجود" });
   }
 
-  res.json({
+  return res.json({
     email: user.twoFactorEmail,
     sms: user.twoFactorSms,
     phone: user.phone,
@@ -117,7 +117,7 @@ router.post("/auth/2fa/toggle", async (req, res) => {
     await db.update(usersTable).set({ twoFactorSms: enabled }).where(eq(usersTable.id, req.session.userId));
   }
 
-  res.json({ message: enabled ? "تم تفعيل التحقق الثنائي" : "تم إلغاء التحقق الثنائي" });
+  return res.json({ message: enabled ? "تم تفعيل التحقق الثنائي" : "تم إلغاء التحقق الثنائي" });
 });
 
 export default router;
